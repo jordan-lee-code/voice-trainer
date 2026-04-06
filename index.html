@@ -1098,42 +1098,47 @@ function rebuildSpectrogram() {
   if (!spectroOC || !uniTimes || uniCount === 0 || !spectroBinMap) return;
   const now = graphPaused ? pauseStartPerf : performance.now();
   const windowMs = SPECTRO_TIME_SEC * 1000;
-  const msPerPx = windowMs / spectroPlotW;
+  const windowStart = now - windowMs;
+  const pxPerMs = spectroPlotW / windowMs;
   const plotH = spectroPlotH;
   const dbRange = SPECTRO_MAX_DB - SPECTRO_MIN_DB;
   const lut = spectroLUT;
   const bm = spectroBinMap;
+
+  // Clear to black
+  spectroOCtx.fillStyle = '#000';
+  spectroOCtx.fillRect(0, 0, spectroPlotW * 2, plotH);
 
   if (!spectroCol || spectroCol.height !== plotH) {
     spectroCol = spectroOCtx.createImageData(1, plotH);
   }
   const cd = spectroCol.data;
 
-  for (let col = 0; col < spectroPlotW; col++) {
-    const t = now - windowMs + col * msPerPx;
-    const slotIdx = findSlotForTime(t);
-    if (slotIdx < 0) {
-      // Black column
-      for (let y = 0; y < plotH; y++) { const i = y << 2; cd[i] = 0; cd[i|1] = 0; cd[i|2] = 0; cd[i|3] = 255; }
-    } else {
-      const offset = slotIdx * uniBinCount;
-      for (let y = 0; y < plotH; y++) {
-        const bin = bm[y];
-        const binLow = bin | 0;
-        const binHigh = binLow + 1 < uniBinCount ? binLow + 1 : binLow;
-        const frac = bin - binLow;
-        const db = uniFftData[offset + binLow] + (uniFftData[offset + binHigh] - uniFftData[offset + binLow]) * frac;
-        const t2 = (db - SPECTRO_MIN_DB) / dbRange;
-        const lutIdx = (t2 < 0 ? 0 : t2 > 1 ? 255 : (t2 * 255 + 0.5) | 0) * 3;
-        const i = y << 2;
-        cd[i] = lut[lutIdx]; cd[i|1] = lut[lutIdx+1]; cd[i|2] = lut[lutIdx+2]; cd[i|3] = 255;
-      }
+  // Walk through buffer slots and map each to its pixel column (no approximation)
+  for (let i = 0; i < uniCount; i++) {
+    const idx = (uniHead - 1 - i + UNI_CAP) % UNI_CAP;
+    const t = uniTimes[idx];
+    if (t < windowStart) break; // older than window, stop
+    const col = Math.round((t - windowStart) * pxPerMs);
+    if (col < 0 || col >= spectroPlotW) continue;
+
+    const offset = idx * uniBinCount;
+    for (let y = 0; y < plotH; y++) {
+      const bin = bm[y];
+      const binLow = bin | 0;
+      const binHigh = binLow + 1 < uniBinCount ? binLow + 1 : binLow;
+      const frac = bin - binLow;
+      const db = uniFftData[offset + binLow] + (uniFftData[offset + binHigh] - uniFftData[offset + binLow]) * frac;
+      const t2 = (db - SPECTRO_MIN_DB) / dbRange;
+      const lutIdx = (t2 < 0 ? 0 : t2 > 1 ? 255 : (t2 * 255 + 0.5) | 0) * 3;
+      const i2 = y << 2;
+      cd[i2] = lut[lutIdx]; cd[i2|1] = lut[lutIdx+1]; cd[i2|2] = lut[lutIdx+2]; cd[i2|3] = 255;
     }
     spectroOCtx.putImageData(spectroCol, col, 0);
     spectroOCtx.putImageData(spectroCol, col + spectroPlotW, 0);
   }
   spectroCursor = 0;
-  spectroLastColTime = graphPaused ? pauseStartPerf : performance.now();
+  spectroLastColTime = now;
 }
 
 // ─── CUSTOM LINES & CURSOR ──────────────────────────────────────────
@@ -1796,13 +1801,8 @@ function mainLoop() {
     analyser.getFloatFrequencyData(spectroFreqData);
   }
 
-  // Pitch detection: autocorrelation in pitch mode (better accuracy), FFT peak in spectro mode (O(n) vs O(n²))
-  let rawFreq;
-  if (vizMode === 'spectro') {
-    rawFreq = detectPitchFFT(spectroFreqData, audioCtx.sampleRate, analyser.fftSize);
-  } else {
-    rawFreq = detectPitch();
-  }
+  // Always use autocorrelation for pitch — best accuracy in both modes
+  const rawFreq = detectPitch();
   const freq = smoothedPitch(rawFreq);
 
   const noteNameEl = document.getElementById('noteName');
@@ -2145,6 +2145,6 @@ document.getElementById('sessionRecBtn').addEventListener('click', async () => {
   }
 });
 </script>
-<div class="app-footer">v0.11.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v0.11.1 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
