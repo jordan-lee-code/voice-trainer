@@ -1808,8 +1808,10 @@ function mainLoop() {
     analyser.getFloatFrequencyData(spectroFreqData);
   }
 
-  // Always use autocorrelation for pitch — best accuracy in both modes
-  const rawFreq = detectPitch();
+  // Autocorrelation for pitch view (best accuracy), FFT peak for spectrogram view (O(n) — reuses existing FFT data)
+  const rawFreq = vizMode === 'spectro'
+    ? detectPitchFFT(spectroFreqData, audioCtx.sampleRate, analyser.fftSize)
+    : detectPitch();
   const freq = smoothedPitch(rawFreq);
 
   const noteNameEl = document.getElementById('noteName');
@@ -2150,6 +2152,6 @@ document.getElementById('sessionRecBtn').addEventListener('click', async () => {
   }
 });
 </script>
-<div class="app-footer">v0.11.2 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v0.11.3 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
