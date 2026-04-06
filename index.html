@@ -932,10 +932,15 @@ function freqToNoteLabel(freq) {
 }
 
 function addCustomLine(freq) {
-  const info = freqToNoteLabel(freq);
+  // Snap to nearest exact note
+  const info = freqToNote(freq);
+  if (!info) return;
+  const snappedFreq = NOTE_FREQ_MAP[info.note];
+  // Don't add duplicate notes
+  if (customLines.some(l => l.note === info.note)) return;
   const color = LINE_COLORS[lineColorIdx % LINE_COLORS.length];
   lineColorIdx++;
-  customLines.push({ freq, note: info.note, label: info.note + ' (' + freq.toFixed(0) + ' Hz)', color });
+  customLines.push({ freq: snappedFreq, note: info.note, label: info.note + ' (' + Math.round(snappedFreq) + ' Hz)', color });
   renderCustomLinesList();
 }
 
