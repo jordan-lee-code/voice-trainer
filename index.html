@@ -841,6 +841,38 @@ const SPECTRO_MAX_DB = -45;
 const SPECTRO_MIN_FREQ = 60;
 const SPECTRO_MAX_FREQ = 5000;
 
+// ─── UNIFIED DATA BUFFER ────────────────────────────────────────────
+// Always collects FFT + pitch at fixed rate, regardless of active view
+const UNI_SLOTS_PER_SEC = 100;
+const UNI_CAP = UNI_SLOTS_PER_SEC * 12; // 12s headroom for 10s window
+const UNI_SLOT_MS = 1000 / UNI_SLOTS_PER_SEC;
+let uniBinCount = 0;
+let uniTimes = null;    // Float64Array — performance.now() timestamps
+let uniPitches = null;  // Float32Array — 0 = no pitch
+let uniFftData = null;  // Float32Array(CAP * binCount) — flat FFT pool
+let uniHead = 0;
+let uniCount = 0;
+let uniLastTime = 0;
+
+function initUnifiedBuffer() {
+  uniBinCount = analyser.frequencyBinCount;
+  uniTimes = new Float64Array(UNI_CAP);
+  uniPitches = new Float32Array(UNI_CAP);
+  uniFftData = new Float32Array(UNI_CAP * uniBinCount);
+  uniHead = 0;
+  uniCount = 0;
+  uniLastTime = performance.now();
+}
+
+function findSlotForTime(targetTime) {
+  if (uniCount === 0) return -1;
+  const newest = (uniHead - 1 + UNI_CAP) % UNI_CAP;
+  const newestTime = uniTimes[newest];
+  const slotsBack = Math.round((newestTime - targetTime) / UNI_SLOT_MS);
+  if (slotsBack < 0 || slotsBack >= uniCount) return -1;
+  return (newest - slotsBack + UNI_CAP) % UNI_CAP;
+}
+
 // Friture-style LUT: flat Uint8Array, 256 × 3
 const spectroLUT = new Uint8Array(256 * 3);
 (function buildLUT() {
@@ -923,11 +955,8 @@ function renderSpectrogram() {
   const plotW = w - leftMargin - rightMargin;
   const plotH = h - 16;
 
-  // FFT data already read in mainLoop when in spectro mode; read here only as fallback
-  if (!spectroFreqData) {
-    spectroFreqData = new Float32Array(analyser.frequencyBinCount);
-    analyser.getFloatFrequencyData(spectroFreqData);
-  }
+  // FFT data is always read in mainLoop
+  if (!spectroFreqData) return;
 
   const sr = audioCtx.sampleRate;
   const binCount = analyser.frequencyBinCount;
@@ -945,11 +974,11 @@ function renderSpectrogram() {
     spectroOCtx.fillRect(0, 0, plotW * 2, plotH);
     spectroPlotW = plotW;
     spectroPlotH = plotH;
-    spectroCursor = 0;
     spectroCol = null;
-    spectroLastColTime = performance.now();
     spectroMsPerPx = (SPECTRO_TIME_SEC * 1000) / plotW;
     buildBinMap(plotH, sr, analyser.fftSize);
+    // Backfill from unified buffer
+    rebuildSpectrogram();
   }
 
   // Pre-allocate column ImageData once
@@ -1062,6 +1091,49 @@ function renderSpectrogram() {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, plotH); ctx.stroke();
     }
   }
+}
+
+// Rebuild spectrogram from unified buffer (called on view switch / resize)
+function rebuildSpectrogram() {
+  if (!spectroOC || !uniTimes || uniCount === 0 || !spectroBinMap) return;
+  const now = graphPaused ? pauseStartPerf : performance.now();
+  const windowMs = SPECTRO_TIME_SEC * 1000;
+  const msPerPx = windowMs / spectroPlotW;
+  const plotH = spectroPlotH;
+  const dbRange = SPECTRO_MAX_DB - SPECTRO_MIN_DB;
+  const lut = spectroLUT;
+  const bm = spectroBinMap;
+
+  if (!spectroCol || spectroCol.height !== plotH) {
+    spectroCol = spectroOCtx.createImageData(1, plotH);
+  }
+  const cd = spectroCol.data;
+
+  for (let col = 0; col < spectroPlotW; col++) {
+    const t = now - windowMs + col * msPerPx;
+    const slotIdx = findSlotForTime(t);
+    if (slotIdx < 0) {
+      // Black column
+      for (let y = 0; y < plotH; y++) { const i = y << 2; cd[i] = 0; cd[i|1] = 0; cd[i|2] = 0; cd[i|3] = 255; }
+    } else {
+      const offset = slotIdx * uniBinCount;
+      for (let y = 0; y < plotH; y++) {
+        const bin = bm[y];
+        const binLow = bin | 0;
+        const binHigh = binLow + 1 < uniBinCount ? binLow + 1 : binLow;
+        const frac = bin - binLow;
+        const db = uniFftData[offset + binLow] + (uniFftData[offset + binHigh] - uniFftData[offset + binLow]) * frac;
+        const t2 = (db - SPECTRO_MIN_DB) / dbRange;
+        const lutIdx = (t2 < 0 ? 0 : t2 > 1 ? 255 : (t2 * 255 + 0.5) | 0) * 3;
+        const i = y << 2;
+        cd[i] = lut[lutIdx]; cd[i|1] = lut[lutIdx+1]; cd[i|2] = lut[lutIdx+2]; cd[i|3] = 255;
+      }
+    }
+    spectroOCtx.putImageData(spectroCol, col, 0);
+    spectroOCtx.putImageData(spectroCol, col + spectroPlotW, 0);
+  }
+  spectroCursor = 0;
+  spectroLastColTime = graphPaused ? pauseStartPerf : performance.now();
 }
 
 // ─── CUSTOM LINES & CURSOR ──────────────────────────────────────────
@@ -1708,6 +1780,7 @@ let animFrame = null;
 let graphPaused = false;
 let pauseStartTime = 0;
 let pausedAtTime = 0; // frozen Date.now() for pitch graph rendering
+let pauseStartPerf = 0; // frozen performance.now() for spectrogram/unified buffer
 
 function mainLoop() {
   if (graphPaused) {
@@ -1717,11 +1790,15 @@ function mainLoop() {
     animFrame = requestAnimationFrame(mainLoop);
     return;
   }
-  // In spectro mode, skip O(n²) autocorrelation — use O(n) FFT peak instead
-  let rawFreq;
-  if (vizMode === 'spectro' && analyser) {
+  // Always read FFT data for the unified buffer (cheap — just copies from analyser)
+  if (analyser) {
     if (!spectroFreqData) spectroFreqData = new Float32Array(analyser.frequencyBinCount);
     analyser.getFloatFrequencyData(spectroFreqData);
+  }
+
+  // Pitch detection: autocorrelation in pitch mode (better accuracy), FFT peak in spectro mode (O(n) vs O(n²))
+  let rawFreq;
+  if (vizMode === 'spectro') {
     rawFreq = detectPitchFFT(spectroFreqData, audioCtx.sampleRate, analyser.fftSize);
   } else {
     rawFreq = detectPitch();
@@ -1788,6 +1865,23 @@ function mainLoop() {
     noteFreqEl.innerHTML = '&nbsp;';
   }
 
+  // Write to unified buffer at fixed slot rate
+  if (uniTimes && spectroFreqData) {
+    const uniNow = performance.now();
+    const slotsDue = Math.floor((uniNow - uniLastTime) / UNI_SLOT_MS);
+    if (slotsDue > 0) {
+      const slots = Math.min(slotsDue, 4);
+      for (let s = 0; s < slots; s++) {
+        uniTimes[uniHead] = uniNow - (slots - 1 - s) * UNI_SLOT_MS;
+        uniPitches[uniHead] = freq || 0;
+        uniFftData.set(spectroFreqData, uniHead * uniBinCount);
+        uniHead = (uniHead + 1) % UNI_CAP;
+        if (uniCount < UNI_CAP) uniCount++;
+      }
+      uniLastTime += slotsDue * UNI_SLOT_MS;
+    }
+  }
+
   if (vizMode === 'spectro') renderSpectrogram();
   else renderGraph();
   animFrame = requestAnimationFrame(mainLoop);
@@ -1809,6 +1903,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
   const errEl = document.getElementById('splashError');
   try {
     await initAudio();
+    initUnifiedBuffer();
   } catch (e) {
     errEl.style.display = 'block';
     errEl.textContent = 'Microphone access denied. Please allow microphone access and try again.';
@@ -1845,14 +1940,13 @@ document.getElementById('startBtn').addEventListener('click', async () => {
     setVizPref('pitch');
     document.getElementById('vizPitch').classList.add('active');
     document.getElementById('vizSpectro').classList.remove('active');
-    spectroOC = null;
   });
   document.getElementById('vizSpectro').addEventListener('click', () => {
     vizMode = 'spectro';
     setVizPref('spectro');
     document.getElementById('vizSpectro').classList.add('active');
     document.getElementById('vizPitch').classList.remove('active');
-    spectroOC = null;
+    spectroOC = null; // force rebuild from unified buffer
   });
 
   // Canvas mouse events for cursor note + right-click line pinning
@@ -1995,11 +2089,18 @@ document.getElementById('startBtn').addEventListener('click', async () => {
       if (graphPaused) {
         pauseStartTime = Date.now();
         pausedAtTime = Date.now();
+        pauseStartPerf = performance.now();
       } else {
-        // Shift all pitch history timestamps forward by pause duration so the graph doesn't jump
+        // Shift all pitch history timestamps forward by pause duration
         const pauseDuration = Date.now() - pauseStartTime;
         for (const p of pitchHistory) p.time += pauseDuration;
-        // Reset spectro time anchor so it doesn't try to catch up
+        // Shift unified buffer timestamps forward by pause duration
+        const perfPauseDuration = performance.now() - pauseStartPerf;
+        for (let i = 0; i < uniCount; i++) {
+          const idx = (uniHead - 1 - i + UNI_CAP) % UNI_CAP;
+          uniTimes[idx] += perfPauseDuration;
+        }
+        uniLastTime = performance.now();
         spectroLastColTime = performance.now();
       }
     }
@@ -2044,6 +2145,6 @@ document.getElementById('sessionRecBtn').addEventListener('click', async () => {
   }
 });
 </script>
-<div class="app-footer">v0.10.4 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v0.11.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
