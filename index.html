@@ -1822,8 +1822,26 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 
   let stageDefaultTarget = null; // stores what renderCurrentStage set
 
+  function syncPickerToState() {
+    const modeEl = document.getElementById('tpMode');
+    if (graphZone) {
+      modeEl.value = 'range';
+      document.getElementById('tpSingle').style.display = 'none';
+      document.getElementById('tpRange').style.display = '';
+      document.getElementById('tpLow').value = graphZone.low;
+      document.getElementById('tpHigh').value = graphZone.high;
+    } else {
+      modeEl.value = 'single';
+      document.getElementById('tpSingle').style.display = '';
+      document.getElementById('tpRange').style.display = 'none';
+      if (targetNoteKey) document.getElementById('tpNote').value = targetNoteKey;
+      else if (graphTargets.length) document.getElementById('tpNote').value = graphTargets[0];
+    }
+  }
+
   document.getElementById('targetNote').addEventListener('click', () => {
     const picker = document.getElementById('targetPicker');
+    if (!picker.classList.contains('open')) syncPickerToState();
     picker.classList.toggle('open');
   });
 
@@ -1834,13 +1852,29 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 
   document.getElementById('tpApply').addEventListener('click', () => {
     const mode = document.getElementById('tpMode').value;
+    const stageId = STAGES[currentStage].id;
     if (mode === 'single') {
       const note = document.getElementById('tpNote').value;
       graphTargets = [note];
-      graphZone = null;
       targetNoteKey = note;
       graphCenterFreq = NOTE_FREQ_MAP[note];
-      document.getElementById('targetNote').textContent = note;
+      // For blend stages, keep zone behavior with the new note as anchor
+      if (stageId === 'blend-up') {
+        const noteIdx = ALL_NOTES.indexOf(note);
+        const highIdx = Math.min(noteIdx + 11, ALL_NOTES.length - 1); // ~octave up
+        graphZone = { low: note, high: ALL_NOTES[highIdx] };
+        targetNoteKey = null;
+        document.getElementById('targetNote').textContent = note + ' \u2191';
+      } else if (stageId === 'blend-down') {
+        const noteIdx = ALL_NOTES.indexOf(note);
+        const lowIdx = Math.max(noteIdx - 5, 0); // ~4th down
+        graphZone = { low: ALL_NOTES[lowIdx], high: note };
+        targetNoteKey = null;
+        document.getElementById('targetNote').textContent = '\u2193 ' + note;
+      } else {
+        graphZone = null;
+        document.getElementById('targetNote').textContent = note;
+      }
     } else {
       const low = document.getElementById('tpLow').value;
       const high = document.getElementById('tpHigh').value;
@@ -1925,6 +1959,6 @@ document.getElementById('sessionRecBtn').addEventListener('click', async () => {
   }
 });
 </script>
-<div class="app-footer">v0.10.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v0.10.1 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
