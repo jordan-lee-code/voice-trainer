@@ -136,6 +136,11 @@ select { font-family: inherit; background: var(--surface2); color: var(--text); 
   .vowel-card { width: 80px; padding: 12px 8px; }
   button { padding: 8px 14px; font-size: 14px; }
 }
+.device-setup { text-align: left; max-width: 460px; width: 100%; margin: 4px 0; }
+.device-setup summary { font-size: 14px; color: var(--text); font-weight: 600; cursor: pointer; padding: 4px 0; }
+.device-setup .device-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.device-setup .device-row label { font-size: 12px; color: var(--text2); min-width: 90px; text-align: right; }
+.device-setup .device-row select { flex: 1; min-width: 0; }
 .app-footer { text-align: center; padding: 12px 0 8px; font-size: 11px; color: var(--text2); opacity: 0.6; }
 .app-footer a { color: var(--text2); }
 </style>
@@ -154,6 +159,21 @@ select { font-family: inherit; background: var(--surface2); color: var(--text); 
     <div style="margin-top:6px;"><b style="color:var(--accent);">Spacebar</b> pauses/unpauses the graph so you can analyze what's on screen.</div>
     <div style="margin-top:6px;"><b style="color:var(--accent);">Record</b> your full session or individual exercises for playback.</div>
   </div>
+  <details class="device-setup" id="deviceSetup">
+    <summary>Audio devices</summary>
+    <div class="device-row">
+      <label>Microphone</label>
+      <select id="inputDevice"><option value="">Default</option></select>
+    </div>
+    <div class="device-row">
+      <label>Tones output</label>
+      <select id="toneOutput"><option value="">Default</option></select>
+    </div>
+    <div class="device-row">
+      <label>Playback output</label>
+      <select id="playbackOutput"><option value="">Default</option></select>
+    </div>
+  </details>
   <button class="primary start-btn" id="startBtn">Start Practice Session</button>
   <div id="splashError" class="error" style="display:none"></div>
 </div>
@@ -387,6 +407,7 @@ const STARTERS = [
 
 // ─── AUDIO ENGINE ────────────────────────────────────────────────────
 let audioCtx = null;
+let toneCtx = null; // separate context for reference tones (can route to different output)
 let analyser = null;
 let mediaStream = null;
 let pitchBuf = null;
@@ -395,16 +416,65 @@ let sessionChunks = [];
 let exerciseMediaRec = null;
 let exerciseChunks = [];
 let isSessionRecording = false;
+let selectedPlaybackDeviceId = '';
+
+// Enumerate audio devices and populate selectors
+async function populateDevices() {
+  // Need a temporary stream to get labeled devices
+  let tempStream = null;
+  try {
+    tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) { return; }
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  tempStream.getTracks().forEach(t => t.stop());
+
+  const inputSel = document.getElementById('inputDevice');
+  const toneSel = document.getElementById('toneOutput');
+  const playSel = document.getElementById('playbackOutput');
+
+  const inputs = devices.filter(d => d.kind === 'audioinput');
+  const outputs = devices.filter(d => d.kind === 'audiooutput');
+
+  inputSel.innerHTML = '<option value="">Default</option>' +
+    inputs.map(d => `<option value="${d.deviceId}">${d.label || 'Microphone ' + d.deviceId.slice(0,6)}</option>`).join('');
+
+  const outputOpts = '<option value="">Default</option>' +
+    outputs.map(d => `<option value="${d.deviceId}">${d.label || 'Speaker ' + d.deviceId.slice(0,6)}</option>`).join('');
+  toneSel.innerHTML = outputOpts;
+  playSel.innerHTML = outputOpts;
+}
 
 async function initAudio() {
-  mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const inputId = document.getElementById('inputDevice').value;
+  const toneOutputId = document.getElementById('toneOutput').value;
+  selectedPlaybackDeviceId = document.getElementById('playbackOutput').value;
+
+  const constraints = { audio: inputId ? { deviceId: { exact: inputId } } : true };
+  mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+  // Analysis context (no output needed — just reads mic)
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   analyser = audioCtx.createAnalyser();
   analyser.fftSize = 4096;
   const src = audioCtx.createMediaStreamSource(mediaStream);
   src.connect(analyser);
   pitchBuf = new Float32Array(analyser.fftSize);
+
+  // Tone context (routed to selected output)
+  toneCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (toneOutputId && toneCtx.setSinkId) {
+    try { await toneCtx.setSinkId(toneOutputId); } catch (e) { console.warn('setSinkId failed for tones:', e); }
+  }
 }
+
+// Apply playback device to an audio element
+function applyPlaybackDevice(audioEl) {
+  if (selectedPlaybackDeviceId && audioEl.setSinkId) {
+    audioEl.setSinkId(selectedPlaybackDeviceId).catch(e => console.warn('setSinkId failed for playback:', e));
+  }
+}
+
+populateDevices();
 
 function detectPitch() {
   if (!analyser) return null;
@@ -480,25 +550,25 @@ function getRefVolume() {
 }
 
 function startReference(noteName) {
-  if (!audioCtx) return;
+  if (!toneCtx) return;
   stopReference();
   const f = NOTE_FREQ_MAP[noteName];
   if (!f) return;
-  refOsc = audioCtx.createOscillator();
-  refGain = audioCtx.createGain();
+  refOsc = toneCtx.createOscillator();
+  refGain = toneCtx.createGain();
   refOsc.type = 'triangle';
   refOsc.frequency.value = f;
   refGain.gain.value = getRefVolume();
   refOsc.connect(refGain);
-  refGain.connect(audioCtx.destination);
+  refGain.connect(toneCtx.destination);
   refOsc.start();
 }
 function stopReference() {
   if (refOsc) {
     if (refGain) {
-      refGain.gain.cancelScheduledValues(audioCtx.currentTime);
-      refGain.gain.setValueAtTime(refGain.gain.value, audioCtx.currentTime);
-      refGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      refGain.gain.cancelScheduledValues(toneCtx.currentTime);
+      refGain.gain.setValueAtTime(refGain.gain.value, toneCtx.currentTime);
+      refGain.gain.exponentialRampToValueAtTime(0.001, toneCtx.currentTime + 0.05);
     }
     const osc = refOsc;
     setTimeout(() => { try { osc.stop(); } catch(e){} }, 60);
@@ -1483,6 +1553,8 @@ function renderRecList(containerId, recordings) {
         <audio controls src="${url}"></audio>
       </div>
     `).join('');
+  // Route playback audio elements to selected output device
+  el.querySelectorAll('audio').forEach(applyPlaybackDevice);
 }
 
 // ─── PITCH FEEDBACK ──────────────────────────────────────────────────
@@ -1765,6 +1837,6 @@ document.getElementById('sessionRecBtn').addEventListener('click', async () => {
   }
 });
 </script>
-<div class="app-footer">v0.8.1 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v0.9.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
