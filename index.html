@@ -946,7 +946,7 @@ function renderGraph() {
 let vizMode = 'pitch'; // 'pitch' or 'spectro'
 
 // Spectrogram settings — defaults, then overwritten from cookie
-const SPECTRO_DEFAULTS = { minDb: -90, maxDb: -45, minFreq: 60, maxFreq: 5000, timeSec: 10, fftSize: 4096 };
+const SPECTRO_DEFAULTS = { minDb: -90, maxDb: -45, minFreq: 60, maxFreq: 1000, timeSec: 10, fftSize: 4096 };
 let SPECTRO_MIN_DB = SPECTRO_DEFAULTS.minDb;
 let SPECTRO_MAX_DB = SPECTRO_DEFAULTS.maxDb;
 let SPECTRO_MIN_FREQ = SPECTRO_DEFAULTS.minFreq;
