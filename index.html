@@ -839,7 +839,7 @@ let vizMode = 'pitch'; // 'pitch' or 'spectro'
 const SPECTRO_MIN_DB = -90;
 const SPECTRO_MAX_DB = -45;
 const SPECTRO_MIN_FREQ = 60;
-const SPECTRO_MAX_FREQ = 5000;
+const SPECTRO_MAX_FREQ = 1000;
 
 // ─── UNIFIED DATA BUFFER ────────────────────────────────────────────
 // Always collects FFT + pitch at fixed rate, regardless of active view
@@ -2152,6 +2152,6 @@ document.getElementById('sessionRecBtn').addEventListener('click', async () => {
   }
 });
 </script>
-<div class="app-footer">v0.11.3 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v0.12.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
