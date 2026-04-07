@@ -167,8 +167,9 @@ select { font-family: inherit; background: var(--surface2); color: var(--text); 
 <body>
 
 <div id="splash">
-  <h1>Voice Training</h1>
-  <p>Real-time pitch detection, guided exercises, and recording. Follow your instructor's 15-minute practice routine through 7 training stages.</p>
+  <h1 id="splashTitle">Voice Training</h1>
+  <p id="splashDesc">Real-time pitch detection, guided exercises, and recording.</p>
+  <p id="splashClient" style="display:none;color:var(--accent);font-weight:600;"></p>
   <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);">
     <span>Default view:</span>
     <div class="viz-toggle">
@@ -298,6 +299,64 @@ select { font-family: inherit; background: var(--surface2); color: var(--text); 
   </div>
 </div>
 
+<!-- __ROUTINE_START__ -->
+<script>
+const ROUTINE = {
+  name: "Voice Training",
+  client: "",
+  description: "15-minute feminization practice routine with 7 stages",
+
+  stages: [
+    { id: 'warmup', name: '1. Warm-up', short: 'Warm-up', type: 'sustained-tone', config: {
+      notes: ['C3','D3','E3','F#3','G#3','A#3'], duration: 10,
+      instruction: 'Sing "ahh" on each note for 10 seconds. Match the target pitch shown on the graph.',
+      showReference: true
+    }},
+    { id: 'counting', name: '2. Counting', short: 'Counting', type: 'repeat-on-note', config: {
+      notes: ['F3','G#3'], reps: 2,
+      instruction: 'Count 1 through 5 with soft vocal weight on the target note. 2 repetitions per note.',
+      showReference: true, display: '1 &nbsp; 2 &nbsp; 3 &nbsp; 4 &nbsp; 5'
+    }},
+    { id: 'blend-up', name: '3. Blend Up', short: 'Blend Up', type: 'glide', config: {
+      direction: 'up', startNote: 'F3', zone: { low: 'F3', high: 'E4' },
+      referenceNote: 'F3', minAttempts: 3,
+      instruction: 'Start on F3 in chest voice and glide upward into falsetto. Keep vocal weight consistently light throughout. Record each attempt and listen back.'
+    }},
+    { id: 'blend-down', name: '4. Blend Down', short: 'Blend Down', type: 'glide', config: {
+      direction: 'down', startNote: 'F3', zone: { low: 'C3', high: 'F3' },
+      referenceNote: 'F3', minAttempts: 3,
+      instruction: 'Start in falsetto and glide downward into chest voice. Keep vocal weight consistently light with no cracking. Record each attempt and listen back.'
+    }},
+    { id: 'sentences', name: '5. Sentences', short: 'Sentences', type: 'read-aloud', config: {
+      listsKey: 'sentences', zone: { low: 'F3', high: 'A#3' },
+      instruction: 'Read each sentence inside the target zone (F3\u2013A#3). Aim for soft vocal weight and use all of the range available.',
+      recording: true
+    }},
+    { id: 'resonance', name: '6. Resonance', short: 'Resonance', type: 'resonance', config: {
+      note: 'F3',
+      preamble: 'First, practice achieving a truly dark yawn. Make sure your lips don\'t move (use a mirror or camera to check).',
+      instruction: 'On F3, move from dark to bright through these vowels. Keep lips still\u2014only change the inside of your mouth.',
+      steps: [
+        { label: 'A', description: 'as in "pay"' },
+        { label: 'E', description: 'as in "see"' },
+        { label: 'O', description: 'as in "toe"' },
+        { label: 'OO', description: 'as in "through"' },
+      ],
+      showReference: true
+    }},
+    { id: 'free', name: '7. Free Practice', short: 'Free', type: 'free-talk', config: {
+      promptsKey: 'starters', zone: { low: 'F3', high: 'A#3' },
+      instruction: 'Put everything together. Answer conversation starters in your target voice. Stay in the target zone with soft vocal weight.',
+      recording: true
+    }},
+  ],
+
+  sentences: null, // set after data arrays load
+  starters: null,
+};
+</script>
+<!-- __ROUTINE_END__ -->
+
 <script>
 // ─── NOTE DATA ───────────────────────────────────────────────────────
 const ALL_NOTES = [
@@ -365,7 +424,7 @@ function getGraphRange() {
 }
 
 // ─── HARVARD SENTENCES ───────────────────────────────────────────────
-const HARVARD = [
+const HARVARD_DATA = [
 ["The birch canoe slid on the smooth planks.","Glue the sheet to the dark blue background.","It's easy to tell the depth of a well.","These days a chicken leg is a rare dish.","Rice is often served in round bowls.","The juice of lemons makes fine punch.","The box was thrown beside the parked truck.","The hogs were fed chopped corn and garbage.","Four hours of steady work faced us.","A large size in stockings is hard to sell."],
 ["The boy was there when the sun rose.","A rod is used to catch pink salmon.","The source of the huge river is the clear spring.","Kick the ball straight and follow through.","Help the woman get back to her feet.","A pot of tea helps to pass the evening.","Smoky fires lack flame and heat.","The soft cushion broke the man's fall.","The salt breeze came across from the sea.","The girl at the booth sold fifty bonds."],
 ["The small pup gnawed a hole in the sock.","The fish twisted and turned on the bent hook.","Press the pants and sew a button on the vest.","The swan dive was far short of perfect.","The beauty of the view stunned the young boy.","Two blue fish swam in the tank.","Her purse was full of useless trash.","The colt reared and threw the tall rider.","It snowed, rained, and hailed the same morning.","Read verse out loud for pleasure."],
@@ -441,7 +500,7 @@ const HARVARD = [
 ];
 
 // ─── CONVERSATION STARTERS ──────────────────────────────────────────
-const STARTERS = [
+const STARTERS_DATA = [
   "What did you do last weekend?",
   "Tell me about your favorite hobby.",
   "What's the best meal you've ever had?",
@@ -473,6 +532,10 @@ const STARTERS = [
   "What do you think the world will be like in 50 years?",
   "Describe your favorite way to spend a rainy day.",
 ];
+
+// Wire data arrays into ROUTINE (kept here to avoid bloating the replaceable ROUTINE block)
+if (ROUTINE.sentences === null) ROUTINE.sentences = HARVARD_DATA;
+if (ROUTINE.starters === null) ROUTINE.starters = STARTERS_DATA;
 
 // ─── AUDIO ENGINE ────────────────────────────────────────────────────
 let audioCtx = null;
@@ -1393,56 +1456,403 @@ function drawCursorLine(leftMargin) {
   ctx.restore();
 }
 
-// ─── STAGE DEFINITIONS ──────────────────────────────────────────────
-const WARMUP_NOTES = ['C3','D3','E3','F#3','G#3','A#3'];
-const COUNT_NOTES = ['F3','G#3'];
-const TARGET_ZONE = { low: 'F3', high: 'A#3' };
-const VOWELS = [
-  { vowel: 'A', word: 'as in "pay"' },
-  { vowel: 'E', word: 'as in "see"' },
-  { vowel: 'O', word: 'as in "toe"' },
-  { vowel: 'OO', word: 'as in "through"' },
-];
-
-const STAGES = [
-  { id: 'warmup', name: '1. Warm-up', short: 'Warm-up' },
-  { id: 'counting', name: '2. Counting', short: 'Counting' },
-  { id: 'blend-up', name: '3. Blend Up', short: 'Blend Up' },
-  { id: 'blend-down', name: '4. Blend Down', short: 'Blend Down' },
-  { id: 'sentences', name: '5. Sentences', short: 'Sentences' },
-  { id: 'resonance', name: '6. Resonance', short: 'Resonance' },
-  { id: 'free', name: '7. Free Practice', short: 'Free' },
-];
-
 // ─── APP STATE ───────────────────────────────────────────────────────
 let currentStage = 0;
 let sessionStartTime = null;
 let sessionTimerInterval = null;
 let stageTimer = null;
 let stageTimerEnd = null;
-
-// Per-stage state
-let warmupStep = 0;
-let warmupTimerActive = false;
-let countStep = 0; // 0-3: F3 x2, G#3 x2
-let blendUpAttempts = 0;
-let blendUpRecordings = [];
-let blendDownAttempts = 0;
-let blendDownRecordings = [];
-let sentenceList = 0;
-let sentenceIdx = 0;
-let sentenceRecordings = [];
-let resonanceStep = 0; // 0=yawn, 1-4=vowels
-let starterIdx = 0;
-let freeRecordings = [];
+let stageState = {}; // per-stage state, reset on stage change
 let isExRecording = false;
 let stagesCompleted = new Set();
 let targetNoteKey = null; // actual note name for pitch feedback, null = use zone only
 
+// ─── ENGINE API ──────────────────────────────────────────────────────
+const engine = {
+  setTarget(note) {
+    graphTargets = note ? [note] : [];
+    graphZone = null;
+    targetNoteKey = note || null;
+    if (note) {
+      document.getElementById('targetNote').textContent = note;
+      graphCenterFreq = NOTE_FREQ_MAP[note];
+    }
+  },
+  setZone(low, high) {
+    graphZone = { low, high };
+    graphTargets = [];
+    targetNoteKey = null;
+    document.getElementById('targetNote').textContent = low + '\u2013' + high;
+    graphCenterFreq = Math.sqrt(NOTE_FREQ_MAP[low] * NOTE_FREQ_MAP[high]);
+  },
+  clearFeedback() {
+    graphTargets = [];
+    graphZone = null;
+    targetNoteKey = null;
+  },
+  setGraphTargets(notes) { graphTargets = notes; },
+  setGraphCenter(freq) { graphCenterFreq = freq; },
+  bindHoldRef(btnId, note) { bindHoldRef(btnId, note); },
+  startRecording() { startExerciseRec(); },
+  async stopRecording() { return await stopExerciseRec(); },
+  renderRecordings(containerId, urls) { renderRecList(containerId, urls); },
+  startTimer(el, seconds, onDone) {
+    const end = Date.now() + seconds * 1000;
+    if (stageTimer) clearInterval(stageTimer);
+    stageTimer = setInterval(() => {
+      const rem = Math.max(0, (end - Date.now()) / 1000);
+      if (el) {
+        el.textContent = rem.toFixed(1);
+        el.className = 'stage-timer' + (rem < 3 ? ' warning' : '');
+      }
+      if (rem <= 0) {
+        clearInterval(stageTimer);
+        stageTimer = null;
+        if (el) { el.textContent = 'Done!'; el.className = 'stage-timer'; }
+        if (onDone) onDone();
+      }
+    }, 50);
+  },
+  clearTimer() { if (stageTimer) { clearInterval(stageTimer); stageTimer = null; } },
+  complete() { completeStage(); },
+  rerender() { renderCurrentStage(); },
+};
+
+// ─── BUILT-IN STAGE TYPE RENDERERS ──────────────────────────────────
+function renderSustainedTone(el, stage) {
+  const cfg = stage.config;
+  const notes = cfg.notes;
+  const step = stageState.step || 0;
+  const note = notes[step];
+  engine.setTarget(note);
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div class="substep-dots" id="stepDots"></div>
+    <div class="substep-label">Note ${step + 1} of ${notes.length}: <strong style="color:var(--target)">${note}</strong> (${Math.round(NOTE_FREQ_MAP[note])} Hz)</div>
+    <div class="stage-timer" id="stageTimerEl">${cfg.duration}.0</div>
+    <div class="controls controls-center">
+      ${cfg.showReference ? '<button id="stageRefBtn">Hold for Reference</button>' : ''}
+      <button id="stageStartBtn" class="primary">Start ${cfg.duration}s Timer</button>
+      <button id="stageSkipBtn" class="sm">Skip Note</button>
+    </div>
+  `;
+  document.getElementById('stepDots').innerHTML = notes.map((n, i) =>
+    `<div class="substep-dot ${i < step ? 'done' : (i === step ? 'active' : '')}"></div>`
+  ).join('');
+
+  if (cfg.showReference) engine.bindHoldRef('stageRefBtn', note);
+
+  const advance = () => {
+    stageState.step = (stageState.step || 0) + 1;
+    if (stageState.step >= notes.length) { stageState.step = 0; engine.complete(); }
+    else engine.rerender();
+  };
+  document.getElementById('stageSkipBtn').onclick = () => { engine.clearTimer(); advance(); };
+  document.getElementById('stageStartBtn').onclick = function() {
+    if (stageState.timerActive) return;
+    stageState.timerActive = true;
+    this.disabled = true;
+    this.textContent = 'Sustaining...';
+    engine.startTimer(document.getElementById('stageTimerEl'), cfg.duration, () => {
+      stageState.timerActive = false;
+      const btn = document.getElementById('stageStartBtn');
+      if (btn) btn.style.display = 'none';
+      const controls = document.getElementById('stageStartBtn')?.parentElement;
+      if (!controls) return;
+      const retryBtn = document.createElement('button');
+      retryBtn.textContent = 'Retry Note';
+      retryBtn.onclick = () => { stageState.timerActive = false; engine.rerender(); };
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = step >= notes.length - 1 ? 'Finish' : 'Next Note';
+      nextBtn.className = 'primary';
+      nextBtn.onclick = advance;
+      controls.appendChild(retryBtn);
+      controls.appendChild(nextBtn);
+    });
+  };
+}
+
+function renderRepeatOnNote(el, stage) {
+  const cfg = stage.config;
+  const notes = cfg.notes;
+  const reps = cfg.reps || 2;
+  const step = stageState.step || 0;
+  const totalSteps = notes.length * reps;
+  const noteIdx = Math.floor(step / reps);
+  const rep = (step % reps) + 1;
+  const note = notes[noteIdx];
+  engine.setTarget(note);
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div class="substep-dots" id="stepDots"></div>
+    <div class="substep-label">Note: <strong style="color:var(--target)">${note}</strong> &mdash; Repetition ${rep} of ${reps}</div>
+    ${cfg.display ? `<div style="text-align:center;font-size:32px;font-weight:700;padding:16px 0;letter-spacing:12px;color:var(--accent)">${cfg.display}</div>` : ''}
+    <div class="controls controls-center">
+      ${cfg.showReference ? '<button id="stageRefBtn">Hold for Reference</button>' : ''}
+      <button id="stageDoneBtn" class="primary">Done - Next</button>
+    </div>
+  `;
+  document.getElementById('stepDots').innerHTML = Array.from({length: totalSteps}, (_, i) =>
+    `<div class="substep-dot ${i < step ? 'done' : (i === step ? 'active' : '')}"></div>`
+  ).join('');
+
+  if (cfg.showReference) engine.bindHoldRef('stageRefBtn', note);
+  document.getElementById('stageDoneBtn').onclick = () => {
+    stageState.step = (stageState.step || 0) + 1;
+    if (stageState.step >= totalSteps) { stageState.step = 0; engine.complete(); }
+    else engine.rerender();
+  };
+}
+
+function renderGlide(el, stage) {
+  const cfg = stage.config;
+  if (!stageState.attempts) stageState.attempts = 0;
+  if (!stageState.recordings) stageState.recordings = [];
+
+  if (cfg.zone) {
+    graphZone = { low: cfg.zone.low, high: cfg.zone.high };
+    if (cfg.referenceNote) graphTargets = [cfg.referenceNote];
+    targetNoteKey = null;
+  }
+  if (cfg.direction === 'up') {
+    document.getElementById('targetNote').textContent = cfg.startNote + ' \u2191';
+    graphCenterFreq = NOTE_FREQ_MAP['A3'];
+  } else {
+    document.getElementById('targetNote').textContent = '\u2193 ' + cfg.startNote;
+    graphCenterFreq = NOTE_FREQ_MAP['D3'];
+  }
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction} Minimum ${cfg.minAttempts} attempts.</div>
+    <div style="text-align:center;padding:8px 0;">
+      <span style="font-size:14px;color:var(--text2)">Attempts: </span>
+      <span style="font-size:24px;font-weight:700;color:${stageState.attempts >= cfg.minAttempts ? 'var(--success)' : 'var(--text)'}">${stageState.attempts}</span>
+      <span style="font-size:14px;color:var(--text2)"> / ${cfg.minAttempts} minimum</span>
+    </div>
+    <div class="controls controls-center">
+      ${cfg.referenceNote ? `<button id="stageRefBtn">Hold for ${cfg.referenceNote}</button>` : ''}
+      <button id="stageRecBtn" class="${isExRecording ? 'danger' : 'primary'}">${isExRecording ? 'Stop Recording' : 'Record Attempt'}</button>
+    </div>
+    <div class="recordings" id="stageRecs"></div>
+  `;
+  engine.renderRecordings('stageRecs', stageState.recordings);
+  if (cfg.referenceNote) engine.bindHoldRef('stageRefBtn', cfg.referenceNote);
+  document.getElementById('stageRecBtn').onclick = async () => {
+    if (isExRecording) {
+      isExRecording = false;
+      const url = await engine.stopRecording();
+      if (url) { stageState.attempts++; stageState.recordings.push(url); }
+      engine.rerender();
+    } else {
+      isExRecording = true;
+      engine.startRecording();
+      engine.rerender();
+    }
+  };
+}
+
+function renderReadAloud(el, stage) {
+  const cfg = stage.config;
+  const lists = ROUTINE[cfg.listsKey];
+  if (!lists || !lists.length) { el.innerHTML = '<div class="stage-title">No sentence data available</div>'; return; }
+  if (stageState.listIdx == null) stageState.listIdx = Math.floor(Math.random() * lists.length);
+  if (stageState.itemIdx == null) stageState.itemIdx = 0;
+  if (!stageState.recordings) stageState.recordings = [];
+
+  if (cfg.zone) engine.setZone(cfg.zone.low, cfg.zone.high);
+  else engine.clearFeedback();
+
+  const list = lists[stageState.listIdx];
+  const nextItem = stageState.itemIdx < list.length - 1 ? list[stageState.itemIdx + 1] : '';
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div class="list-selector">
+      <label>List:</label>
+      <select id="listSelect">${lists.map((_, i) => `<option value="${i}" ${i === stageState.listIdx ? 'selected' : ''}>List ${i + 1}</option>`).join('')}</select>
+      <button id="randListBtn" class="sm">Random</button>
+      <span style="color:var(--text2);font-size:13px;margin-left:8px">${stageState.itemIdx + 1} / ${list.length}</span>
+    </div>
+    <div class="sent-progress">${list.map((_, i) => `<div class="pip ${i < stageState.itemIdx ? 'done' : (i === stageState.itemIdx ? 'active' : '')}"></div>`).join('')}</div>
+    <div class="current-sentence">${list[stageState.itemIdx]}</div>
+    <div class="next-sentence">${nextItem ? 'Next: ' + nextItem : ''}</div>
+    <div class="controls controls-center">
+      <button id="sentPrevBtn" class="sm" ${stageState.itemIdx <= 0 ? 'disabled' : ''}>Prev</button>
+      <button id="sentNextBtn" class="primary">${stageState.itemIdx >= list.length - 1 ? 'Finish List' : 'Next Sentence'}</button>
+      ${cfg.recording ? `<button id="stageRecBtn" class="${isExRecording ? 'danger sm' : 'sm'}">${isExRecording ? 'Stop Rec' : 'Record'}</button>` : ''}
+    </div>
+    <div class="recordings" id="stageRecs"></div>
+  `;
+  engine.renderRecordings('stageRecs', stageState.recordings);
+
+  document.getElementById('listSelect').onchange = e => {
+    stageState.listIdx = parseInt(e.target.value);
+    stageState.itemIdx = 0;
+    engine.rerender();
+  };
+  document.getElementById('randListBtn').onclick = () => {
+    stageState.listIdx = Math.floor(Math.random() * lists.length);
+    stageState.itemIdx = 0;
+    engine.rerender();
+  };
+  document.getElementById('sentPrevBtn').onclick = () => {
+    if (stageState.itemIdx > 0) { stageState.itemIdx--; engine.rerender(); }
+  };
+  document.getElementById('sentNextBtn').onclick = () => {
+    stageState.itemIdx++;
+    if (stageState.itemIdx >= list.length) { stageState.itemIdx = 0; engine.complete(); }
+    else engine.rerender();
+  };
+  if (cfg.recording) {
+    document.getElementById('stageRecBtn').onclick = async () => {
+      if (isExRecording) {
+        isExRecording = false;
+        const url = await engine.stopRecording();
+        if (url) stageState.recordings.push(url);
+        engine.rerender();
+      } else {
+        isExRecording = true;
+        engine.startRecording();
+        engine.rerender();
+      }
+    };
+  }
+}
+
+function renderResonanceType(el, stage) {
+  const cfg = stage.config;
+  if (stageState.step == null) stageState.step = 0;
+  engine.setTarget(cfg.note);
+
+  const inPreamble = stageState.step === 0 && cfg.preamble;
+  const steps = cfg.steps;
+  const vowelStep = stageState.step - (cfg.preamble ? 1 : 0);
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${inPreamble ? cfg.preamble : (cfg.instruction || 'Move from dark to bright through these steps.')}</div>
+    ${inPreamble ? `
+      <div style="text-align:center;padding:20px 0;font-size:20px;color:var(--target)">Practice Dark Yawn</div>
+      <div class="controls controls-center">
+        ${cfg.showReference ? '<button id="stageRefBtn">Hold for ' + cfg.note + '</button>' : ''}
+        <button id="stageNextBtn" class="primary">Ready \u2014 Move to Steps</button>
+      </div>
+    ` : `
+      <div class="vowel-grid">
+        ${steps.map((s, i) => `
+          <div class="vowel-card ${i < vowelStep ? 'done' : (i === vowelStep ? 'active' : '')}">
+            <div class="vowel">${s.label}</div>
+            <div class="word">${s.description}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="substep-label">Step ${vowelStep + 1} of ${steps.length}: <strong style="color:var(--target)">${steps[vowelStep]?.label || ''}</strong> ${steps[vowelStep]?.description || ''}</div>
+      <div class="controls controls-center">
+        ${cfg.showReference ? '<button id="stageRefBtn">Hold for ' + cfg.note + '</button>' : ''}
+        <button id="stageNextBtn" class="primary">${vowelStep >= steps.length - 1 ? 'Done' : 'Next Step'}</button>
+      </div>
+    `}
+  `;
+  if (cfg.showReference) engine.bindHoldRef('stageRefBtn', cfg.note);
+  document.getElementById('stageNextBtn').onclick = () => {
+    stageState.step++;
+    const totalSteps = steps.length + (cfg.preamble ? 1 : 0);
+    if (stageState.step >= totalSteps) { stageState.step = 0; engine.complete(); }
+    else engine.rerender();
+  };
+}
+
+function renderFreeTalk(el, stage) {
+  const cfg = stage.config;
+  const prompts = ROUTINE[cfg.promptsKey];
+  if (!prompts || !prompts.length) { el.innerHTML = '<div class="stage-title">No prompts available</div>'; return; }
+  if (stageState.promptIdx == null) stageState.promptIdx = Math.floor(Math.random() * prompts.length);
+  if (!stageState.recordings) stageState.recordings = [];
+
+  if (cfg.zone) engine.setZone(cfg.zone.low, cfg.zone.high);
+  else engine.clearFeedback();
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div class="starter-card" id="starterCard">${prompts[stageState.promptIdx]}</div>
+    <div class="controls controls-center">
+      <button id="newPromptBtn">New Question</button>
+      ${cfg.recording ? `<button id="stageRecBtn" class="${isExRecording ? 'danger' : 'primary'}">${isExRecording ? 'Stop Recording' : 'Record'}</button>` : ''}
+    </div>
+    <div class="recordings" id="stageRecs"></div>
+  `;
+  engine.renderRecordings('stageRecs', stageState.recordings);
+
+  document.getElementById('newPromptBtn').onclick = () => {
+    stageState.promptIdx = Math.floor(Math.random() * prompts.length);
+    document.getElementById('starterCard').textContent = prompts[stageState.promptIdx];
+  };
+  if (cfg.recording) {
+    document.getElementById('stageRecBtn').onclick = async () => {
+      if (isExRecording) {
+        isExRecording = false;
+        const url = await engine.stopRecording();
+        if (url) stageState.recordings.push(url);
+        engine.rerender();
+      } else {
+        isExRecording = true;
+        engine.startRecording();
+        engine.rerender();
+      }
+    };
+  }
+}
+
+function renderTimedHold(el, stage) {
+  const cfg = stage.config;
+  if (cfg.note) engine.setTarget(cfg.note);
+  else if (cfg.zone) engine.setZone(cfg.zone.low, cfg.zone.high);
+  else engine.clearFeedback();
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div class="stage-timer" id="stageTimerEl">${cfg.duration}.0</div>
+    <div class="controls controls-center">
+      ${cfg.showReference && cfg.note ? '<button id="stageRefBtn">Hold for Reference</button>' : ''}
+      <button id="stageStartBtn" class="primary">Start ${cfg.duration}s Timer</button>
+    </div>
+  `;
+  if (cfg.showReference && cfg.note) engine.bindHoldRef('stageRefBtn', cfg.note);
+  document.getElementById('stageStartBtn').onclick = function() {
+    if (stageState.timerActive) return;
+    stageState.timerActive = true;
+    this.disabled = true;
+    this.textContent = 'In progress...';
+    engine.startTimer(document.getElementById('stageTimerEl'), cfg.duration, () => {
+      stageState.timerActive = false;
+      engine.complete();
+    });
+  };
+}
+
+// ─── STAGE TYPE REGISTRY ────────────────────────────────────────────
+const STAGE_TYPES = {
+  'sustained-tone': renderSustainedTone,
+  'repeat-on-note': renderRepeatOnNote,
+  'glide': renderGlide,
+  'read-aloud': renderReadAloud,
+  'resonance': renderResonanceType,
+  'free-talk': renderFreeTalk,
+  'timed-hold': renderTimedHold,
+};
+
 // ─── UI RENDERING ────────────────────────────────────────────────────
 function renderStageNav() {
   const nav = document.getElementById('stageNav');
-  nav.innerHTML = STAGES.map((s, i) => {
+  nav.innerHTML = ROUTINE.stages.map((s, i) => {
     const cls = i === currentStage ? 'active' : (stagesCompleted.has(i) ? 'done' : '');
     return `<button class="stage-pill ${cls}" data-stage="${i}">${s.short}</button>`;
   }).join('');
@@ -1452,13 +1862,13 @@ function renderStageNav() {
 }
 
 function setStage(n) {
-  if (n < 0 || n >= STAGES.length) return;
-  if (warmupTimerActive) clearInterval(stageTimer);
-  warmupTimerActive = false;
+  if (n < 0 || n >= ROUTINE.stages.length) return;
+  engine.clearTimer();
   stopReference();
   if (isExRecording) { isExRecording = false; stopExerciseRec(); }
   feedbackState = 'off';
   zoneFeedback = 'off';
+  stageState = {};
   currentStage = n;
   renderStageNav();
   renderCurrentStage();
@@ -1467,376 +1877,25 @@ function setStage(n) {
 
 function updateNavButtons() {
   document.getElementById('prevBtn').disabled = currentStage === 0;
-  document.getElementById('nextBtn').textContent = currentStage === STAGES.length - 1 ? 'Finish' : 'Next Stage';
+  document.getElementById('nextBtn').textContent = currentStage === ROUTINE.stages.length - 1 ? 'Finish' : 'Next Stage';
 }
 
 function completeStage() {
   stagesCompleted.add(currentStage);
-  if (currentStage < STAGES.length - 1) setStage(currentStage + 1);
+  if (currentStage < ROUTINE.stages.length - 1) setStage(currentStage + 1);
   else renderStageNav();
 }
 
 function renderCurrentStage() {
   const el = document.getElementById('stageContent');
-  switch (STAGES[currentStage].id) {
-    case 'warmup': renderWarmup(el); break;
-    case 'counting': renderCounting(el); break;
-    case 'blend-up': renderBlendUp(el); break;
-    case 'blend-down': renderBlendDown(el); break;
-    case 'sentences': renderSentences(el); break;
-    case 'resonance': renderResonance(el); break;
-    case 'free': renderFree(el); break;
-  }
-}
-
-// ── Stage: Warm-up ──
-function renderWarmup(el) {
-  const note = WARMUP_NOTES[warmupStep] || WARMUP_NOTES[0];
-  graphTargets = [note];
-  graphZone = null;
-  targetNoteKey = note;
-  document.getElementById('targetNote').textContent = note;
-
-  el.innerHTML = `
-    <div class="stage-title">Warm-up: Sustained Tones</div>
-    <div class="stage-desc">Sing "ahh" on each note for 10 seconds. Match the target pitch shown on the graph.</div>
-    <div class="substep-dots" id="warmupDots"></div>
-    <div class="substep-label">Note ${warmupStep + 1} of ${WARMUP_NOTES.length}: <strong style="color:var(--target)">${note}</strong> (${Math.round(NOTE_FREQ_MAP[note])} Hz)</div>
-    <div class="stage-timer" id="warmupTimer">10.0</div>
-    <div class="controls controls-center">
-      <button id="warmupRefBtn">Hold for Reference</button>
-      <button id="warmupStartBtn" class="primary">Start 10s Timer</button>
-      <button id="warmupSkipBtn" class="sm">Skip Note</button>
-    </div>
-  `;
-
-  const dots = document.getElementById('warmupDots');
-  dots.innerHTML = WARMUP_NOTES.map((n, i) => {
-    const cls = i < warmupStep ? 'done' : (i === warmupStep ? 'active' : '');
-    return `<div class="substep-dot ${cls}"></div>`;
-  }).join('');
-
-  graphCenterFreq = NOTE_FREQ_MAP[note];
-  bindHoldRef('warmupRefBtn', note);
-  document.getElementById('warmupSkipBtn').onclick = () => {
-    if (warmupTimerActive) { clearInterval(stageTimer); warmupTimerActive = false; }
-    advanceWarmup();
-  };
-  document.getElementById('warmupStartBtn').onclick = () => {
-    if (warmupTimerActive) return;
-    warmupTimerActive = true;
-    const btn = document.getElementById('warmupStartBtn');
-    btn.disabled = true;
-    btn.textContent = 'Sustaining...';
-    stageTimerEnd = Date.now() + 10000;
-    stageTimer = setInterval(() => {
-      const rem = Math.max(0, (stageTimerEnd - Date.now()) / 1000);
-      const timerEl = document.getElementById('warmupTimer');
-      if (timerEl) {
-        timerEl.textContent = rem.toFixed(1);
-        timerEl.className = 'stage-timer' + (rem < 3 ? ' warning' : '');
-      }
-      if (rem <= 0) {
-        clearInterval(stageTimer);
-        warmupTimerActive = false;
-        // Show retry / next choice instead of auto-advancing
-        const timerDone = document.getElementById('warmupTimer');
-        if (timerDone) { timerDone.textContent = 'Done!'; timerDone.className = 'stage-timer'; }
-        btn.style.display = 'none';
-        const controls = btn.parentElement;
-        const retryBtn = document.createElement('button');
-        retryBtn.textContent = 'Retry Note';
-        retryBtn.onclick = () => renderWarmup(document.getElementById('stageContent'));
-        const nextBtn = document.createElement('button');
-        nextBtn.textContent = warmupStep >= WARMUP_NOTES.length - 1 ? 'Finish Warm-up' : 'Next Note';
-        nextBtn.className = 'primary';
-        nextBtn.onclick = () => advanceWarmup();
-        controls.appendChild(retryBtn);
-        controls.appendChild(nextBtn);
-      }
-    }, 50);
-  };
-}
-
-function advanceWarmup() {
-  warmupStep++;
-  if (warmupStep >= WARMUP_NOTES.length) {
-    warmupStep = 0;
-    completeStage();
+  const stage = ROUTINE.stages[currentStage];
+  if (stage.type === 'custom' && typeof stage.render === 'function') {
+    stage.render(el, engine);
   } else {
-    renderWarmup(document.getElementById('stageContent'));
+    const renderer = STAGE_TYPES[stage.type];
+    if (renderer) renderer(el, stage);
+    else el.innerHTML = `<div class="stage-title">${stage.name}</div><div class="stage-desc">Unknown stage type: ${stage.type}</div>`;
   }
-}
-
-// ── Stage: Counting ──
-function renderCounting(el) {
-  const noteIdx = countStep < 2 ? 0 : 1;
-  const note = COUNT_NOTES[noteIdx];
-  const rep = (countStep % 2) + 1;
-  graphTargets = [note];
-  graphZone = null;
-  targetNoteKey = note;
-  document.getElementById('targetNote').textContent = note;
-
-  el.innerHTML = `
-    <div class="stage-title">Counting Exercise</div>
-    <div class="stage-desc">Count 1 through 5 with soft vocal weight on the target note. 2 repetitions per note.</div>
-    <div class="substep-dots" id="countDots"></div>
-    <div class="substep-label">Note: <strong style="color:var(--target)">${note}</strong> &mdash; Repetition ${rep} of 2</div>
-    <div style="text-align:center;font-size:32px;font-weight:700;padding:16px 0;letter-spacing:12px;color:var(--accent)">1 &nbsp; 2 &nbsp; 3 &nbsp; 4 &nbsp; 5</div>
-    <div class="controls controls-center">
-      <button id="countRefBtn">Hold for Reference</button>
-      <button id="countDoneBtn" class="primary">Done - Next</button>
-    </div>
-  `;
-
-  const dots = document.getElementById('countDots');
-  dots.innerHTML = [0,1,2,3].map(i => {
-    const cls = i < countStep ? 'done' : (i === countStep ? 'active' : '');
-    return `<div class="substep-dot ${cls}"></div>`;
-  }).join('');
-
-  graphCenterFreq = NOTE_FREQ_MAP[note];
-  bindHoldRef('countRefBtn', note);
-  document.getElementById('countDoneBtn').onclick = () => {
-    countStep++;
-    if (countStep >= 4) { countStep = 0; completeStage(); }
-    else renderCounting(document.getElementById('stageContent'));
-  };
-}
-
-// ── Stage: Blend Up ──
-function renderBlendUp(el) {
-  graphTargets = ['F3'];
-  graphZone = { low: 'F3', high: 'E4' };
-  targetNoteKey = null; // glide exercise — use zone feedback
-  document.getElementById('targetNote').textContent = 'F3 \u2191';
-
-  el.innerHTML = `
-    <div class="stage-title">Chest to Falsetto Blend</div>
-    <div class="stage-desc">Start on F3 in chest voice and glide upward into falsetto. Keep vocal weight consistently light throughout. Record each attempt and listen back. Minimum 3 attempts.</div>
-    <div style="text-align:center;padding:8px 0;">
-      <span style="font-size:14px;color:var(--text2)">Attempts: </span>
-      <span style="font-size:24px;font-weight:700;color:${blendUpAttempts >= 3 ? 'var(--success)' : 'var(--text)'}">${blendUpAttempts}</span>
-      <span style="font-size:14px;color:var(--text2)"> / 3 minimum</span>
-    </div>
-    <div class="controls controls-center">
-      <button id="blendUpRefBtn">Hold for F3</button>
-      <button id="blendUpRecBtn" class="${isExRecording ? 'danger' : 'primary'}">${isExRecording ? 'Stop Recording' : 'Record Attempt'}</button>
-    </div>
-    <div class="recordings" id="blendUpRecs"></div>
-  `;
-
-  renderRecList('blendUpRecs', blendUpRecordings);
-
-  graphCenterFreq = NOTE_FREQ_MAP['A3']; // center between F3 and falsetto range
-  bindHoldRef('blendUpRefBtn', 'F3');
-  document.getElementById('blendUpRecBtn').onclick = async () => {
-    if (isExRecording) {
-      isExRecording = false;
-      const url = await stopExerciseRec();
-      if (url) { blendUpAttempts++; blendUpRecordings.push(url); }
-      renderBlendUp(document.getElementById('stageContent'));
-    } else {
-      isExRecording = true;
-      startExerciseRec();
-      renderBlendUp(document.getElementById('stageContent'));
-    }
-  };
-}
-
-// ── Stage: Blend Down ──
-function renderBlendDown(el) {
-  graphTargets = ['F3'];
-  graphZone = { low: 'C3', high: 'F3' };
-  targetNoteKey = null; // glide exercise — use zone feedback
-  document.getElementById('targetNote').textContent = '\u2193 F3';
-
-  el.innerHTML = `
-    <div class="stage-title">Falsetto to Chest Blend</div>
-    <div class="stage-desc">Start in falsetto and glide downward into chest voice. Keep vocal weight consistently light with no cracking. Record each attempt and listen back. Minimum 3 attempts.</div>
-    <div style="text-align:center;padding:8px 0;">
-      <span style="font-size:14px;color:var(--text2)">Attempts: </span>
-      <span style="font-size:24px;font-weight:700;color:${blendDownAttempts >= 3 ? 'var(--success)' : 'var(--text)'}">${blendDownAttempts}</span>
-      <span style="font-size:14px;color:var(--text2)"> / 3 minimum</span>
-    </div>
-    <div class="controls controls-center">
-      <button id="blendDownRefBtn">Hold for F3</button>
-      <button id="blendDownRecBtn" class="${isExRecording ? 'danger' : 'primary'}">${isExRecording ? 'Stop Recording' : 'Record Attempt'}</button>
-    </div>
-    <div class="recordings" id="blendDownRecs"></div>
-  `;
-
-  renderRecList('blendDownRecs', blendDownRecordings);
-
-  graphCenterFreq = NOTE_FREQ_MAP['D3']; // center below F3 to show downward space
-  bindHoldRef('blendDownRefBtn', 'F3');
-  document.getElementById('blendDownRecBtn').onclick = async () => {
-    if (isExRecording) {
-      isExRecording = false;
-      const url = await stopExerciseRec();
-      if (url) { blendDownAttempts++; blendDownRecordings.push(url); }
-      renderBlendDown(document.getElementById('stageContent'));
-    } else {
-      isExRecording = true;
-      startExerciseRec();
-      renderBlendDown(document.getElementById('stageContent'));
-    }
-  };
-}
-
-// ── Stage: Harvard Sentences ──
-function renderSentences(el) {
-  graphTargets = [];
-  graphZone = TARGET_ZONE;
-  targetNoteKey = null;
-  graphCenterFreq = Math.sqrt(NOTE_FREQ_MAP['F3'] * NOTE_FREQ_MAP['A#3']);
-  document.getElementById('targetNote').textContent = 'F3\u2013A#3';
-
-  const list = HARVARD[sentenceList];
-  const nextSent = sentenceIdx < list.length - 1 ? list[sentenceIdx + 1] : '';
-  el.innerHTML = `
-    <div class="stage-title">Harvard Sentences</div>
-    <div class="stage-desc">Read each sentence inside the target zone (F3\u2013A#3). Aim for soft vocal weight and use all of the range available.</div>
-    <div class="list-selector">
-      <label>List:</label>
-      <select id="listSelect">${HARVARD.map((_, i) => `<option value="${i}" ${i === sentenceList ? 'selected' : ''}>List ${i + 1}</option>`).join('')}</select>
-      <button id="randListBtn" class="sm">Random</button>
-      <span style="color:var(--text2);font-size:13px;margin-left:8px">${sentenceIdx + 1} / ${list.length}</span>
-    </div>
-    <div class="sent-progress">${list.map((_, i) => `<div class="pip ${i < sentenceIdx ? 'done' : (i === sentenceIdx ? 'active' : '')}"></div>`).join('')}</div>
-    <div class="current-sentence">${list[sentenceIdx]}</div>
-    <div class="next-sentence">${nextSent ? 'Next: ' + nextSent : ''}</div>
-    <div class="controls controls-center">
-      <button id="sentPrevBtn" class="sm" ${sentenceIdx <= 0 ? 'disabled' : ''}>Prev</button>
-      <button id="sentNextBtn" class="primary">${sentenceIdx >= list.length - 1 ? 'Finish List' : 'Next Sentence'}</button>
-      <button id="sentRecBtn" class="${isExRecording ? 'danger sm' : 'sm'}">${isExRecording ? 'Stop Rec' : 'Record'}</button>
-    </div>
-    <div class="recordings" id="sentRecs"></div>
-  `;
-
-  renderRecList('sentRecs', sentenceRecordings);
-
-  document.getElementById('listSelect').onchange = (e) => {
-    sentenceList = parseInt(e.target.value);
-    sentenceIdx = 0;
-    renderSentences(document.getElementById('stageContent'));
-  };
-  document.getElementById('randListBtn').onclick = () => {
-    sentenceList = Math.floor(Math.random() * HARVARD.length);
-    sentenceIdx = 0;
-    renderSentences(document.getElementById('stageContent'));
-  };
-  document.getElementById('sentPrevBtn').onclick = () => {
-    if (sentenceIdx > 0) { sentenceIdx--; renderSentences(document.getElementById('stageContent')); }
-  };
-  document.getElementById('sentNextBtn').onclick = () => {
-    sentenceIdx++;
-    if (sentenceIdx >= list.length) {
-      sentenceIdx = 0;
-      completeStage();
-    } else {
-      renderSentences(document.getElementById('stageContent'));
-    }
-  };
-  document.getElementById('sentRecBtn').onclick = async () => {
-    if (isExRecording) {
-      isExRecording = false;
-      const url = await stopExerciseRec();
-      if (url) sentenceRecordings.push(url);
-      renderSentences(document.getElementById('stageContent'));
-    } else {
-      isExRecording = true;
-      startExerciseRec();
-      renderSentences(document.getElementById('stageContent'));
-    }
-  };
-}
-
-// ── Stage: Resonance ──
-function renderResonance(el) {
-  graphTargets = ['F3'];
-  graphZone = null;
-  targetNoteKey = 'F3';
-  document.getElementById('targetNote').textContent = 'F3';
-
-  el.innerHTML = `
-    <div class="stage-title">Dark to Bright Resonance</div>
-    <div class="stage-desc">
-      ${resonanceStep === 0
-        ? 'First, practice achieving a truly dark yawn. Make sure your lips don\'t move (use a mirror or camera to check).'
-        : 'On F3, move from dark to bright through these vowels. Keep lips still\u2014only change the inside of your mouth.'}
-    </div>
-    ${resonanceStep === 0 ? `
-      <div style="text-align:center;padding:20px 0;font-size:20px;color:var(--target)">Practice Dark Yawn</div>
-      <div class="controls controls-center">
-        <button id="resRefBtn">Hold for F3</button>
-        <button id="resNextBtn" class="primary">Ready \u2014 Move to Vowels</button>
-      </div>
-    ` : `
-      <div class="vowel-grid" id="vowelGrid">
-        ${VOWELS.map((v, i) => `
-          <div class="vowel-card ${i + 1 < resonanceStep ? 'done' : (i + 1 === resonanceStep ? 'active' : '')}">
-            <div class="vowel">${v.vowel}</div>
-            <div class="word">${v.word}</div>
-          </div>
-        `).join('')}
-      </div>
-      <div class="substep-label">Step ${resonanceStep} of 4: <strong style="color:var(--target)">${VOWELS[resonanceStep - 1]?.vowel || ''}</strong> ${VOWELS[resonanceStep - 1]?.word || ''}</div>
-      <div class="controls controls-center">
-        <button id="resRefBtn">Hold for F3</button>
-        <button id="resNextBtn" class="primary">${resonanceStep >= 4 ? 'Done' : 'Next Vowel'}</button>
-      </div>
-    `}
-  `;
-
-  graphCenterFreq = NOTE_FREQ_MAP['F3'];
-  bindHoldRef('resRefBtn', 'F3');
-  document.getElementById('resNextBtn').onclick = () => {
-    resonanceStep++;
-    if (resonanceStep > 4) { resonanceStep = 0; completeStage(); }
-    else renderResonance(document.getElementById('stageContent'));
-  };
-}
-
-// ── Stage: Free Practice ──
-function renderFree(el) {
-  graphTargets = [];
-  graphZone = TARGET_ZONE;
-  targetNoteKey = null;
-  graphCenterFreq = Math.sqrt(NOTE_FREQ_MAP['F3'] * NOTE_FREQ_MAP['A#3']);
-  document.getElementById('targetNote').textContent = 'F3\u2013A#3';
-
-  const starter = STARTERS[starterIdx % STARTERS.length];
-  el.innerHTML = `
-    <div class="stage-title">Free Practice</div>
-    <div class="stage-desc">Put everything together. Answer conversation starters in your target voice. Stay in the target zone with soft vocal weight.</div>
-    <div class="starter-card" id="starterCard">${starter}</div>
-    <div class="controls controls-center">
-      <button id="freeNewBtn">New Question</button>
-      <button id="freeRecBtn" class="${isExRecording ? 'danger' : 'primary'}">${isExRecording ? 'Stop Recording' : 'Record'}</button>
-    </div>
-    <div class="recordings" id="freeRecs"></div>
-  `;
-
-  renderRecList('freeRecs', freeRecordings);
-
-  document.getElementById('freeNewBtn').onclick = () => {
-    starterIdx = Math.floor(Math.random() * STARTERS.length);
-    document.getElementById('starterCard').textContent = STARTERS[starterIdx];
-  };
-  document.getElementById('freeRecBtn').onclick = async () => {
-    if (isExRecording) {
-      isExRecording = false;
-      const url = await stopExerciseRec();
-      if (url) freeRecordings.push(url);
-      renderFree(document.getElementById('stageContent'));
-    } else {
-      isExRecording = true;
-      startExerciseRec();
-      renderFree(document.getElementById('stageContent'));
-    }
-  };
 }
 
 // ── Recording list helper ──
@@ -1850,7 +1909,6 @@ function renderRecList(containerId, recordings) {
         <audio controls src="${url}"></audio>
       </div>
     `).join('');
-  // Route playback audio elements to selected output device
   el.querySelectorAll('audio').forEach(applyPlaybackDevice);
 }
 
@@ -2020,6 +2078,15 @@ function startSessionTimer() {
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────
+// Apply ROUTINE metadata to splash
+if (ROUTINE.name) document.getElementById('splashTitle').textContent = ROUTINE.name;
+if (ROUTINE.description) document.getElementById('splashDesc').textContent = ROUTINE.description;
+if (ROUTINE.client) {
+  const clientEl = document.getElementById('splashClient');
+  clientEl.textContent = 'Prepared for: ' + ROUTINE.client;
+  clientEl.style.display = '';
+}
+
 document.getElementById('startBtn').addEventListener('click', async () => {
   const errEl = document.getElementById('splashError');
   try {
@@ -2039,10 +2106,6 @@ document.getElementById('startBtn').addEventListener('click', async () => {
   renderCurrentStage();
   updateNavButtons();
   startSessionTimer();
-
-  // Randomize starting sentence list and conversation starter
-  sentenceList = Math.floor(Math.random() * HARVARD.length);
-  starterIdx = Math.floor(Math.random() * STARTERS.length);
 
   document.getElementById('refVol').addEventListener('input', e => {
     if (refGain) refGain.gain.value = e.target.value / 100;
@@ -2149,7 +2212,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 
   document.getElementById('tpApply').addEventListener('click', () => {
     const mode = document.getElementById('tpMode').value;
-    const stageId = STAGES[currentStage].id;
+    const stageId = ROUTINE.stages[currentStage].id;
     if (mode === 'single') {
       const note = document.getElementById('tpNote').value;
       graphTargets = [note];
@@ -2230,7 +2293,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 
 document.getElementById('prevBtn').addEventListener('click', () => setStage(currentStage - 1));
 document.getElementById('nextBtn').addEventListener('click', () => {
-  if (currentStage === STAGES.length - 1) {
+  if (currentStage === ROUTINE.stages.length - 1) {
     stagesCompleted.add(currentStage);
     renderStageNav();
     alert('Practice session complete! Great work.');
