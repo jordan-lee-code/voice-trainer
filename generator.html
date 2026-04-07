@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Training Generator</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2129;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --accent: #58a6ff;
+  --danger: #f85149;
+  --success: #3fb950;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  padding: 40px 20px;
+}
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+.subtitle { color: var(--text2); margin-bottom: 32px; line-height: 1.5; text-align: center; max-width: 520px; }
+
+.container { width: 100%; max-width: 640px; }
+
+label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+input, textarea {
+  width: 100%; background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 12px; font-size: 15px; font-family: inherit;
+  transition: border-color .15s;
+}
+input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+textarea { resize: vertical; min-height: 200px; line-height: 1.5; }
+
+.field { margin-bottom: 20px; }
+.field .hint { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+button {
+  font-family: inherit; cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text);
+  padding: 10px 20px; border-radius: 6px; font-size: 15px; transition: all .15s;
+}
+button:hover { background: var(--border); }
+button:active { transform: scale(0.97); }
+button.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+button.primary:hover { opacity: .85; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+.btn-row { display: flex; gap: 12px; margin-top: 8px; }
+
+#status {
+  margin-top: 20px; padding: 14px 16px;
+  border-radius: 6px; font-size: 14px; line-height: 1.5;
+  display: none;
+}
+#status.loading { display: block; background: var(--surface); border: 1px solid var(--border); color: var(--text2); }
+#status.error { display: block; background: #1a0f0f; border: 1px solid var(--danger); color: var(--danger); }
+#status.success { display: block; background: #0f1a0f; border: 1px solid var(--success); color: var(--success); }
+
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid var(--text2); border-top-color: transparent;
+  border-radius: 50%; animation: spin .6s linear infinite;
+  vertical-align: middle; margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#preview {
+  display: none; margin-top: 24px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 20px;
+}
+#preview h3 { font-size: 16px; margin-bottom: 4px; }
+#preview .desc { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+#preview ol { padding-left: 20px; }
+#preview li { margin-bottom: 4px; font-size: 14px; color: var(--text); }
+#preview li span { color: var(--text2); font-size: 12px; margin-left: 6px; }
+
+#downloadBtn {
+  display: none; margin-top: 16px; width: 100%;
+  padding: 14px; font-size: 17px; font-weight: 600;
+  background: var(--accent); color: #000; border-color: var(--accent);
+}
+#downloadBtn:hover { opacity: .85; }
+
+#rawOutput {
+  display: none; margin-top: 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px; max-height: 300px; overflow: auto;
+}
+#rawOutput pre { font-size: 12px; white-space: pre-wrap; word-break: break-word; color: var(--text2); font-family: 'Cascadia Code', 'Fira Code', monospace; }
+
+#fallbackUpload { display: none; margin-top: 16px; }
+#fallbackUpload label { cursor: pointer; color: var(--accent); text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>Voice Training Generator</h1>
+<p class="subtitle">Enter exercise instructions and generate a customized single-file voice training app for your client.</p>
+
+<div class="container">
+  <div class="field">
+    <label for="clientName">Client name</label>
+    <input type="text" id="clientName" placeholder="e.g. Alex">
+  </div>
+
+  <div class="field">
+    <label for="apiKey">Claude API key</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-...">
+    <div class="hint">Used for a single API call. Never stored.</div>
+  </div>
+
+  <div class="field">
+    <label for="instructions">Exercise instructions</label>
+    <textarea id="instructions" placeholder="Describe the training routine you want to create. Include target notes, exercises, stages, timing, any specific sentences or prompts to use, etc."></textarea>
+  </div>
+
+  <div class="btn-row">
+    <button id="generateBtn" class="primary">Generate</button>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="fallbackUpload">
+    <p style="font-size:14px; color:var(--text2); margin-bottom:8px;">Could not fetch index.html automatically. Upload it manually:</p>
+    <input type="file" id="fileInput" accept=".html">
+  </div>
+
+  <div id="rawOutput"><pre id="rawPre"></pre></div>
+
+  <div id="preview">
+    <h3 id="previewTitle"></h3>
+    <div class="desc" id="previewDesc"></div>
+    <ol id="previewList"></ol>
+  </div>
+
+  <button id="downloadBtn">Download Training App</button>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are a voice training routine generator. You convert a voice teacher's exercise instructions into a structured JavaScript ROUTINE object for a voice training web app.
+
+Output ONLY a valid JavaScript block:
+const ROUTINE = { ... };
+
+Do NOT include any explanation, markdown formatting, or anything outside the code block.
+
+The ROUTINE object must have these top-level fields:
+- name: string — display name for the routine
+- client: string — the client's name
+- description: string — short description of the routine
+- stages: array of stage objects
+- Any data arrays referenced by stages (sentence lists, prompt lists, etc.)
+
+Each stage object needs:
+- id: unique string identifier (lowercase, no spaces)
+- name: display name with number prefix (e.g. "1. Warm-up")
+- short: short abbreviation for nav pill (e.g. "Warm-up")
+- type: one of the built-in types listed below, or 'custom'
+- config: type-specific configuration object
+
+Built-in stage types (use these whenever possible):
+
+1. sustained-tone — Hold a note for N seconds with optional reference tone.
+   Config: { notes: string[], duration: number, instruction: string, showReference: boolean }
+
+2. repeat-on-note — Repeat an action N times on each note.
+   Config: { notes: string[], reps: number, instruction: string, showReference: boolean, display: string (optional HTML for visual) }
+
+3. glide — Glide between registers with recording and listen-back.
+   Config: { direction: 'up'|'down', startNote: string, zone: {low: string, high: string}, referenceNote: string, minAttempts: number, instruction: string }
+
+4. read-aloud — Read through sentences/phrases from a data array.
+   Config: { listsKey: string (key in ROUTINE pointing to 2D array), zone: {low: string, high: string}, instruction: string, recording: boolean }
+
+5. resonance — Multi-step vowel/sound progression with optional preamble.
+   Config: { note: string, preamble: string, instruction: string, steps: [{label: string, description: string}], showReference: boolean }
+
+6. free-talk — Open conversation practice with prompts from a data array.
+   Config: { promptsKey: string (key in ROUTINE pointing to 1D array), zone: {low: string, high: string}, instruction: string, recording: boolean }
+
+7. timed-hold — Simple timed exercise with instructions.
+   Config: { duration: number, instruction: string, note: string (optional), zone: {low: string, high: string} (optional), showReference: boolean }
+
+8. custom — Escape hatch. Provide render(el, engine) and cleanup() functions.
+   The engine object provides: setTarget(note), setZone(low, high), clearFeedback(), setGraphTargets(notes), setGraphCenter(freq), bindHoldRef(btnId, note), startRecording(), stopRecording() -> Promise<url>, renderRecordings(containerId, urls), startTimer(el, seconds, onDone), clearTimer(), complete(), rerender()
+
+Notes are specified as strings like 'C3', 'F#3', 'A#4', etc. Valid range is C2 to E5.
+
+Rules:
+- Use built-in types whenever possible. Only use 'custom' when truly needed.
+- Include any data arrays (sentences, prompts, word lists) directly in the ROUTINE object as top-level keys.
+- For read-aloud stages, the listsKey should reference a 2D array (array of arrays of strings) stored as a top-level key in ROUTINE.
+- For free-talk stages, the promptsKey should reference a 1D array of strings stored as a top-level key in ROUTINE.
+- If the instructions mention Harvard sentences or don't specify custom sentences for a read-aloud stage, set the listsKey to 'sentences' and include \`sentences: null\` in ROUTINE (the engine will fill it from built-in data).
+- Similarly, if no custom conversation starters are given for free-talk, set promptsKey to 'starters' and include \`starters: null\`.
+- For custom sentence/prompt sets, create them as top-level keys with descriptive names.
+- Keep stage ids short and lowercase with hyphens.
+- Number the stage names sequentially.`;
+
+let engineBefore = null;
+let engineAfter = null;
+let fallbackFile = null;
+let generatedHtml = null;
+let generatedClientName = '';
+
+const statusEl = document.getElementById('status');
+const previewEl = document.getElementById('preview');
+const downloadBtn = document.getElementById('downloadBtn');
+const rawOutputEl = document.getElementById('rawOutput');
+const rawPre = document.getElementById('rawPre');
+const fallbackEl = document.getElementById('fallbackUpload');
+const fileInput = document.getElementById('fileInput');
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => { fallbackFile = reader.result; };
+    reader.readAsText(file);
+  }
+});
+
+function showStatus(type, html) {
+  statusEl.className = type;
+  statusEl.innerHTML = html;
+  statusEl.style.display = 'block';
+}
+
+function hideStatus() { statusEl.style.display = 'none'; }
+
+async function loadEngine() {
+  let html = fallbackFile;
+  if (!html) {
+    try {
+      const resp = await fetch('index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      html = await resp.text();
+    } catch (err) {
+      fallbackEl.style.display = 'block';
+      throw new Error(`Could not fetch index.html: ${err.message}. Use the file upload below.`);
+    }
+  }
+
+  const startMarker = '<!-- __ROUTINE_START__ -->';
+  const endMarker = '<!-- __ROUTINE_END__ -->';
+  const startIdx = html.indexOf(startMarker);
+  const endIdx = html.indexOf(endMarker);
+  if (startIdx === -1 || endIdx === -1) {
+    throw new Error('Could not find __ROUTINE_START__ / __ROUTINE_END__ markers in index.html.');
+  }
+
+  engineBefore = html.substring(0, startIdx);
+  engineAfter = html.substring(endIdx + endMarker.length);
+}
+
+function extractRoutineCode(responseText) {
+  // Try markdown code block first
+  const codeBlockMatch = responseText.match(/```(?:js|javascript)?\s*\n([\s\S]*?)```/);
+  let code = codeBlockMatch ? codeBlockMatch[1].trim() : responseText.trim();
+
+  // Validate it parses
+  try {
+    new Function(code);
+  } catch (err) {
+    throw new Error(`Generated code failed to parse: ${err.message}`);
+  }
+
+  return code;
+}
+
+function parseRoutineForPreview(code) {
+  try {
+    const fn = new Function(code + '\nreturn ROUTINE;');
+    return fn();
+  } catch { return null; }
+}
+
+function assembleHtml(before, after, routineCode) {
+  return before + '<!-- __ROUTINE_START__ -->\n<script>\n' + routineCode + '\n<\/script>\n<!-- __ROUTINE_END__ -->' + after;
+}
+
+function downloadHtml(html, clientName) {
+  const slug = clientName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `voice-training-${slug || 'custom'}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function showPreview(routine) {
+  if (!routine || !routine.stages) return;
+  document.getElementById('previewTitle').textContent = routine.name || 'Custom Routine';
+  document.getElementById('previewDesc').textContent = routine.description || '';
+  const list = document.getElementById('previewList');
+  list.innerHTML = '';
+  for (const s of routine.stages) {
+    const li = document.createElement('li');
+    li.innerHTML = `${s.name} <span>(${s.type})</span>`;
+    list.appendChild(li);
+  }
+  previewEl.style.display = 'block';
+}
+
+document.getElementById('generateBtn').addEventListener('click', async () => {
+  const clientName = document.getElementById('clientName').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const instructions = document.getElementById('instructions').value.trim();
+
+  if (!clientName) return showStatus('error', 'Please enter a client name.');
+  if (!apiKey) return showStatus('error', 'Please enter your Claude API key.');
+  if (!instructions) return showStatus('error', 'Please enter exercise instructions.');
+
+  // Reset
+  previewEl.style.display = 'none';
+  downloadBtn.style.display = 'none';
+  rawOutputEl.style.display = 'none';
+  generatedHtml = null;
+
+  // Load engine template
+  showStatus('loading', '<span class="spinner"></span>Loading engine template...');
+  try {
+    if (!engineBefore) await loadEngine();
+  } catch (err) {
+    return showStatus('error', err.message);
+  }
+
+  // Call Claude API
+  showStatus('loading', '<span class="spinner"></span>Generating routine with Claude... This may take 30\u201360 seconds.');
+
+  const generateBtn = document.getElementById('generateBtn');
+  generateBtn.disabled = true;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 16000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: `Client name: ${clientName}\n\nExercise instructions:\n${instructions}` }],
+      }),
+    });
+
+    if (!resp.ok) {
+      const errBody = await resp.text();
+      let msg = `API error (${resp.status})`;
+      try { msg = JSON.parse(errBody).error?.message || msg; } catch {}
+      throw new Error(msg);
+    }
+
+    const data = await resp.json();
+    const responseText = data.content?.[0]?.text || '';
+
+    if (!responseText) throw new Error('Empty response from Claude.');
+
+    // Extract routine code
+    let routineCode;
+    try {
+      routineCode = extractRoutineCode(responseText);
+    } catch (err) {
+      rawPre.textContent = responseText;
+      rawOutputEl.style.display = 'block';
+      throw new Error(`Could not extract valid ROUTINE code. Raw response shown below.\n\n${err.message}`);
+    }
+
+    // Show preview
+    const routine = parseRoutineForPreview(routineCode);
+    if (routine) showPreview(routine);
+
+    // Assemble
+    generatedHtml = assembleHtml(engineBefore, engineAfter, routineCode);
+    generatedClientName = clientName;
+
+    showStatus('success', 'Routine generated successfully. Review the stages below and download.');
+    downloadBtn.style.display = 'block';
+
+  } catch (err) {
+    showStatus('error', err.message);
+  } finally {
+    generateBtn.disabled = false;
+  }
+});
+
+downloadBtn.addEventListener('click', () => {
+  if (generatedHtml) downloadHtml(generatedHtml, generatedClientName);
+});
+</script>
+</body>
+</html>
