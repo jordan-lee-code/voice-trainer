@@ -15,9 +15,13 @@ A browser-based voice training app with real-time pitch detection, spectrogram v
 - **Session & exercise recording** via MediaRecorder with download support
 - **Single HTML file** — no build step, no dependencies
 
+## Generator
+
+**[Generator](https://aidapaul.github.io/voice-trainer/generator.html)** — a teacher enters a client name, their Claude API key, and free-form exercise instructions. The generator calls Claude to produce a customized training routine and downloads a single HTML file ready for the student. No coding needed.
+
 ## Customization
 
-The app is a single `index.html` file. The training routine is defined by a few constants and the `STAGES` array — see the `CLAUDE.md` file for guidance on how to adapt it to different training programs.
+The app separates the **engine** (pitch detection, spectrogram, recording, UI) from the **routine** (stages, exercises, data). The routine is a `ROUTINE` object in a clearly marked script block — see `CLAUDE.md` for the full architecture guide. The generator uses this same structure.
 
 ## Tech
 
