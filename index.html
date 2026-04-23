@@ -907,8 +907,11 @@ function initGraph() {
 }
 function resizeCanvas() {
   const rect = canvas.parentElement.getBoundingClientRect();
-  canvas.width = rect.width - 32;
-  canvas.height = parseInt(getComputedStyle(canvas).height) || 220;
+  canvas.width = Math.max(0, rect.width - 32);
+  // Prefer the parent wrapper's resolved height — the canvas itself may have
+  // a percentage height (focus mode) that getComputedStyle returns as "100%".
+  const parentH = Math.floor(rect.height);
+  canvas.height = parentH > 0 ? parentH : (parseInt(getComputedStyle(canvas).height) || 220);
 }
 
 function freqToY(freq) {
@@ -2440,6 +2443,6 @@ try {
   }
 } catch(e) {}
 </script>
-<div class="app-footer">v1.1.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v1.1.1 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
