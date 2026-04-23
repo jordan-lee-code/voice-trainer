@@ -7,11 +7,23 @@ The core app is **one HTML file** (`index.html`) — all CSS, HTML, and JS in on
 A small PWA envelope sits alongside it so users can install the app to their home screen and run it offline:
 
 - `manifest.webmanifest` — name, icons, theme colors
-- `sw.js` — service worker (stale-while-revalidate cache; bump `CACHE_NAME` whenever cached files change)
+- `sw.js` — service worker (stale-while-revalidate cache)
 - `icon.svg` — single scalable icon used for manifest, favicon, and iOS home screen
 - `generator.html` — standalone page; also cached by the service worker
 
 The PWA files are intentionally minimal and don't require a build step. Do not grow them into a framework layer.
+
+### Updating cached files (important)
+
+The service worker caches `index.html`, `generator.html`, `manifest.webmanifest`, and `icon.svg`. When any of them changes, **bump `CACHE_NAME` in `sw.js`** (e.g. `voice-trainer-v1` → `voice-trainer-v2`) in the same commit. The `activate` handler deletes old caches and `clients.claim()` makes the new version take effect without a second reload.
+
+If you skip the bump, installed users keep seeing the old version until their cache evicts naturally — sometimes days. This is the single most common PWA footgun; do not forget it.
+
+Add any new files you reference from the HTML (scripts, stylesheets, fonts, images) to the `ASSETS` array in `sw.js` or they'll only work online.
+
+### Icons
+
+`icon.svg` covers everything for modern browsers and iOS Safari 17+. If you ever want belt-and-braces coverage for older iOS or nicer App Library thumbnails, add PNG sizes (`192×192`, `512×512`, `180×180` for `apple-touch-icon`) and list them in both `manifest.webmanifest` and `sw.js` `ASSETS`. Not required — just a polish upgrade.
 
 ## Key Sections (in order of appearance in the file)
 
