@@ -836,10 +836,17 @@ function stopReference() {
     refOsc = null; refGain = null;
   }
 }
+function getPlayableTargetNote() {
+  // Singular note selected
+  if (targetNoteKey) return targetNoteKey;
+  // Zone-based stages (blend-up/-down, glides) still carry an anchor note in graphTargets
+  if (graphTargets.length === 1) return graphTargets[0];
+  return null;
+}
 function updateTargetRefBtn() {
   const btn = document.getElementById('targetRefBtn');
   if (!btn) return;
-  btn.style.display = targetNoteKey ? '' : 'none';
+  btn.style.display = getPlayableTargetNote() ? '' : 'none';
 }
 function bindHoldRef(btnId, noteName) {
   const btn = document.getElementById(btnId);
@@ -1522,7 +1529,7 @@ const engine = {
     targetNoteKey = null;
     updateTargetRefBtn();
   },
-  setGraphTargets(notes) { graphTargets = notes; },
+  setGraphTargets(notes) { graphTargets = notes; updateTargetRefBtn(); },
   setGraphCenter(freq) { graphCenterFreq = freq; },
   bindHoldRef(btnId, note) { bindHoldRef(btnId, note); },
   startRecording() { startExerciseRec(); },
@@ -2336,8 +2343,9 @@ document.getElementById('startBtn').addEventListener('click', async () => {
     const start = e => {
       e.preventDefault();
       e.stopPropagation();
-      if (!targetNoteKey || playing) return;
-      startReference(targetNoteKey);
+      const note = getPlayableTargetNote();
+      if (!note || playing) return;
+      startReference(note);
       btn.classList.add('active');
       playing = true;
     };
@@ -2445,6 +2453,6 @@ try {
   }
 } catch(e) {}
 </script>
-<div class="app-footer">v1.1.2 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v1.1.3 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
