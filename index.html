@@ -157,6 +157,8 @@ select { font-family: inherit; background: var(--surface2); color: var(--text); 
 #main.focus-mode .pitch-panel { flex: 1 1 auto; display: flex; flex-direction: column; margin-bottom: 0; min-height: 0; }
 #main.focus-mode .pitch-panel > .canvas-wrap { flex: 1 1 auto; min-height: 0; }
 #main.focus-mode #pitchCanvas { height: 100% !important; min-height: 0 !important; }
+#main.focus-mode ~ .app-footer { display: none; }
+body:has(#main.focus-mode) { overflow: hidden; }
 #focusToggleBtn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 /* Responsive */
@@ -2443,6 +2445,6 @@ try {
   }
 } catch(e) {}
 </script>
-<div class="app-footer">v1.1.1 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v1.1.2 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
