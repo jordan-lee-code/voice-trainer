@@ -59,3 +59,13 @@ Replace the `STARTERS` array with your own prompts.
 - Monospace fonts for data display
 - No external fonts or assets
 - Responsive down to 600px width
+
+## Versioning
+
+- The app version lives in the footer of `index.html` (search for `app-footer`).
+- Bump it on every user-facing change, following [semver](https://semver.org/):
+  - **MAJOR** (`X.0.0`) — breaking change to saved state, routine schema, or a removed feature.
+  - **MINOR** (`1.X.0`) — new user-facing feature or non-trivial UX change (added button, new stage type, new mode).
+  - **PATCH** (`1.1.X`) — bug fix, copy tweak, small visual polish, or internal refactor with no behavior change.
+- Do this in the same commit as the change it describes — don't leave a trailing "bump version" commit.
+- Purely internal edits (CLAUDE.md, README, docs/, .gitignore) do not bump the version.
