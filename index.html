@@ -78,6 +78,12 @@ select { font-family: inherit; background: var(--surface2); color: var(--text); 
 .target-picker input[type="text"]:focus { outline: none; border-color: var(--accent); }
 .target-picker .tp-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
 .target-picker .tp-row select, .target-picker .tp-row input[type="text"] { flex: 1; margin-bottom: 0; }
+.note-combo { position: relative; }
+.note-combo input[type="text"] { margin-bottom: 0; }
+.note-combo-popup { display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 180px; overflow-y: auto; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; margin-top: 2px; z-index: 25; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+.note-combo-popup.open { display: block; }
+.note-combo-item { padding: 5px 10px; cursor: pointer; font-family: monospace; font-size: 14px; color: var(--text); }
+.note-combo-item:hover, .note-combo-item.active { background: var(--accent); color: #fff; }
 .vol-control { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
 .vol-control label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
 .vol-control input[type=range] { width: 80px; accent-color: var(--target); }
@@ -295,19 +301,27 @@ body:has(#main.focus-mode) { overflow: hidden; }
           </select>
           <div id="tpSingle">
             <label>Note <span style="opacity:0.6;">(type to filter)</span></label>
-            <input type="text" id="tpNote" list="tpNoteList" autocomplete="off" spellcheck="false" placeholder="e.g. C4">
+            <div class="note-combo">
+              <input type="text" id="tpNote" autocomplete="off" spellcheck="false" placeholder="e.g. C4" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="tpNotePopup">
+              <div class="note-combo-popup" id="tpNotePopup" role="listbox"></div>
+            </div>
           </div>
           <div id="tpRange" style="display:none;">
             <div class="tp-row">
               <label style="min-width:30px;">Low</label>
-              <input type="text" id="tpLow" list="tpNoteList" autocomplete="off" spellcheck="false">
+              <div class="note-combo" style="flex:1;">
+                <input type="text" id="tpLow" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="tpLowPopup">
+                <div class="note-combo-popup" id="tpLowPopup" role="listbox"></div>
+              </div>
             </div>
             <div class="tp-row">
               <label style="min-width:30px;">High</label>
-              <input type="text" id="tpHigh" list="tpNoteList" autocomplete="off" spellcheck="false">
+              <div class="note-combo" style="flex:1;">
+                <input type="text" id="tpHigh" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="tpHighPopup">
+                <div class="note-combo-popup" id="tpHighPopup" role="listbox"></div>
+              </div>
             </div>
           </div>
-          <datalist id="tpNoteList"></datalist>
           <div style="display:flex;gap:6px;margin-top:4px;">
             <button class="sm primary" id="tpApply">Apply</button>
             <button class="sm" id="tpReset">Reset to stage default</button>
@@ -2291,15 +2305,105 @@ async function tryStartSession() {
 
   renderCustomLinesList();
 
-  // Target picker
-  const tpNoteOpts = ALL_NOTES.map(n => `<option value="${n}">`).join('');
-  document.getElementById('tpNoteList').innerHTML = tpNoteOpts;
-
   // Normalize user input: "c4" → "C4", and validate against ALL_NOTES
   function normalizeNote(raw) {
     if (!raw) return null;
     const v = raw.trim().toUpperCase().replace(/\s+/g, '');
     return ALL_NOTES.includes(v) ? v : null;
+  }
+
+  // Smart filter: "d2" matches D2 AND D#2 (same letter+octave, any accidental).
+  // "d" → all D notes across octaves. "d#" → only sharps. "2" → all octave-2 notes.
+  function filterNotes(raw) {
+    const f = (raw || '').trim().toUpperCase().replace(/\s+/g, '');
+    if (!f) return ALL_NOTES.slice();
+    const m = /^([A-G])(#?)(\d*)$/.exec(f);
+    if (m) {
+      const [, letter, sharp, octave] = m;
+      return ALL_NOTES.filter(n => {
+        const nm = /^([A-G])(#?)(\d)$/.exec(n);
+        if (!nm) return false;
+        if (nm[1] !== letter) return false;
+        if (sharp && nm[2] !== sharp) return false;
+        if (octave && nm[3] !== octave) return false;
+        return true;
+      });
+    }
+    // Fallback: plain substring match
+    return ALL_NOTES.filter(n => n.includes(f));
+  }
+
+  function setupNoteCombo(inputId, popupId, onCommit) {
+    const input = document.getElementById(inputId);
+    const popup = document.getElementById(popupId);
+    let activeIdx = 0;
+
+    function render(matches) {
+      activeIdx = 0;
+      popup.innerHTML = matches.map((n, i) =>
+        `<div class="note-combo-item${i === 0 ? ' active' : ''}" role="option" data-value="${n}">${n}</div>`
+      ).join('');
+    }
+    function open() {
+      const matches = filterNotes(input.value);
+      render(matches);
+      if (matches.length) {
+        popup.classList.add('open');
+        input.setAttribute('aria-expanded', 'true');
+      } else {
+        close();
+      }
+    }
+    function close() {
+      popup.classList.remove('open');
+      input.setAttribute('aria-expanded', 'false');
+    }
+    function highlight(newIdx) {
+      const items = popup.querySelectorAll('.note-combo-item');
+      if (!items.length) return;
+      activeIdx = Math.max(0, Math.min(newIdx, items.length - 1));
+      items.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+      items[activeIdx].scrollIntoView({ block: 'nearest' });
+    }
+    function commit(val) {
+      input.value = val;
+      close();
+      if (onCommit) onCommit();
+    }
+
+    input.addEventListener('focus', open);
+    input.addEventListener('input', open);
+    input.addEventListener('keydown', e => {
+      const items = popup.querySelectorAll('.note-combo-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!popup.classList.contains('open')) { open(); return; }
+        highlight(activeIdx + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlight(activeIdx - 1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (popup.classList.contains('open') && items[activeIdx]) {
+          commit(items[activeIdx].dataset.value);
+        } else {
+          applyTargetPicker();
+        }
+      } else if (e.key === 'Escape') {
+        if (popup.classList.contains('open')) { e.stopPropagation(); close(); }
+      } else if (e.key === 'Tab') {
+        close();
+      }
+    });
+    // mousedown (not click) so blur doesn't close the popup before selection registers
+    popup.addEventListener('mousedown', e => {
+      const item = e.target.closest('.note-combo-item');
+      if (item) {
+        e.preventDefault();
+        commit(item.dataset.value);
+      }
+    });
+    input.addEventListener('blur', () => setTimeout(close, 120));
   }
 
   let stageDefaultTarget = null; // stores what renderCurrentStage set
@@ -2399,11 +2503,19 @@ async function tryStartSession() {
 
   document.getElementById('tpApply').addEventListener('click', applyTargetPicker);
 
-  // Enter inside any picker input applies
-  ['tpNote', 'tpLow', 'tpHigh'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); applyTargetPicker(); }
-    });
+  setupNoteCombo('tpNote', 'tpNotePopup', applyTargetPicker);
+  setupNoteCombo('tpLow', 'tpLowPopup', () => {
+    // Move to High after committing Low
+    const high = document.getElementById('tpHigh');
+    setTimeout(() => { high.focus(); high.select(); }, 0);
+  });
+  setupNoteCombo('tpHigh', 'tpHighPopup', () => {
+    // If Low is valid, apply; otherwise send focus back to Low
+    if (normalizeNote(document.getElementById('tpLow').value)) applyTargetPicker();
+    else {
+      const low = document.getElementById('tpLow');
+      setTimeout(() => { low.focus(); low.select(); }, 0);
+    }
   });
 
   document.getElementById('tpReset').addEventListener('click', () => {
@@ -2604,6 +2716,6 @@ try {
   }
 } catch(e) {}
 </script>
-<div class="app-footer">v1.2.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v1.2.1 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
