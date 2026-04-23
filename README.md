@@ -2,7 +2,9 @@
 
 A browser-based voice training app with real-time pitch detection, spectrogram visualization, guided exercises, and recording. No install, no backend — runs entirely client-side.
 
-**Live:** https://aidapaul.github.io/voice-trainer/
+**Live:** https://lee-it.co.uk/voice-trainer/
+
+This is a fork of [AidaPaul/voice-trainer](https://github.com/AidaPaul/voice-trainer) by [Aida Paul](https://github.com/AidaPaul), maintained independently with additional features. The original work and all copyright remain with Aida Paul — see [License](#license).
 
 ## Features
 
@@ -17,7 +19,7 @@ A browser-based voice training app with real-time pitch detection, spectrogram v
 
 ## Generator
 
-**[Generator](https://aidapaul.github.io/voice-trainer/generator.html)** — a teacher enters a client name, their Claude API key, and free-form exercise instructions. The generator calls Claude to produce a customized training routine and downloads a single HTML file ready for the student. No coding needed.
+**[Generator](https://lee-it.co.uk/voice-trainer/generator.html)** — a teacher enters a client name, their Claude API key, and free-form exercise instructions. The generator calls Claude to produce a customized training routine and downloads a single HTML file ready for the student. No coding needed.
 
 ## Customization
 
@@ -30,8 +32,15 @@ The app separates the **engine** (pitch detection, spectrogram, recording, UI) f
 - Autocorrelation pitch detection with parabolic interpolation
 - Pre-computed LUT for spectrogram colormap
 
+## Changes in this fork
+
+- Adaptive warm-up exercises that step up to the user's target note
+- Splash screen target-note picker and femme/androgynous range filter
+- Out-of-range tone alert (sustained tone while pitch is outside the zone)
+
 ## License
 
 BSD 2-Clause — see [LICENSE](LICENSE).
 
-Copyright (c) 2026 Aida Paul <aida.paul@proton.me>
+Original work copyright (c) 2026 Aida Paul <aida.paul@proton.me>  
+Fork modifications copyright (c) 2026 Jordan Lee <jordan@lee-it.co.uk>

@@ -1,5 +1,15 @@
 # Voice Training App — Development Guide
 
+## Fork & Deployment
+
+This repo (`jordan-lee-code/voice-trainer`) is a fork of [`AidaPaul/voice-trainer`](https://github.com/AidaPaul/voice-trainer). The upstream is the authoritative original; this fork adds features independently.
+
+- **Live URL:** https://lee-it.co.uk/voice-trainer/ (GitHub Pages, auto-deploys from `main`)
+- **Upstream remote:** `git fetch upstream && git merge upstream/main` to pull in upstream changes
+- **License:** BSD 2-Clause — original copyright belongs to Aida Paul. Fork modifications are copyright Jordan Lee. Always preserve both copyright lines in the LICENSE file and README.
+
+Do not submit PRs to upstream without checking whether they align with the original author's direction.
+
 ## Architecture
 
 The core app is **one HTML file** (`index.html`) — all CSS, HTML, and JS in one place. No build step, no framework, no dependencies. Keep it that way.
