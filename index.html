@@ -316,6 +316,10 @@ body:has(#main.focus-mode) { overflow: hidden; }
           <label>Tone vol</label>
           <input type="range" id="refVol" min="0" max="100" value="60">
         </div>
+        <div class="vol-control" style="margin-top:4px;">
+          <label for="beepAlertChk">Tone alert when out of range</label>
+          <input type="checkbox" id="beepAlertChk" style="width:14px;height:14px;cursor:pointer;accent-color:var(--target);" title="Play a continuous tone while pitch is out of range (low = too deep, high = too high)">
+        </div>
         <div class="target-picker" id="targetPicker">
           <label>Mode</label>
           <select id="tpMode">
@@ -1004,6 +1008,57 @@ function stopReference() {
     refOsc = null; refGain = null;
   }
 }
+
+let alertOsc = null;
+let alertGain = null;
+let alertDir = null; // 'below' | 'above' — track direction so tone updates if pitch crosses both boundaries
+
+function startAlertTone(direction) {
+  if (!toneCtx) return;
+  if (alertOsc && alertDir === direction) return; // already playing the right tone
+  stopAlertTone();
+  alertOsc  = toneCtx.createOscillator();
+  alertGain = toneCtx.createGain();
+  alertOsc.type = 'sine';
+  alertOsc.frequency.value = direction === 'below' ? 330 : 880;
+  alertGain.gain.value = 1.0;
+  alertOsc.connect(alertGain);
+  alertGain.connect(toneCtx.destination);
+  alertOsc.start();
+  alertDir = direction;
+}
+
+function stopAlertTone() {
+  if (!alertOsc) return;
+  const t = toneCtx.currentTime;
+  alertGain.gain.setValueAtTime(alertGain.gain.value, t);
+  alertGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  const osc = alertOsc;
+  setTimeout(() => { try { osc.stop(); } catch(e){} }, 60);
+  alertOsc = null; alertGain = null; alertDir = null;
+}
+
+function tickBeepAlert(freq, zFeedback) {
+  if (!beepAlertEnabled || !graphZone || !freq) {
+    stopAlertTone(); beepOffSince = null; beepOnSince = null; return;
+  }
+  const now = performance.now();
+  if (zFeedback === 'on' || zFeedback === 'close') {
+    beepOffSince = null;
+    if (beepOnSince === null) { beepOnSince = now; return; }
+    if (now - beepOnSince >= 150) { stopAlertTone(); }
+    return;
+  }
+  // Out of range
+  beepOnSince = null;
+  if (beepOffSince === null) { beepOffSince = now; return; }
+  if (now - beepOffSince >= 150) {
+    const zLow  = NOTE_FREQ_MAP[graphZone.low];
+    const zHigh = NOTE_FREQ_MAP[graphZone.high];
+    startAlertTone(freq < zLow ? 'below' : 'above');
+  }
+}
+
 function getPlayableTargetNote() {
   // Singular note selected
   if (targetNoteKey) return targetNoteKey;
@@ -2127,6 +2182,7 @@ async function setStage(n) {
   stopReference();
   feedbackState = 'off';
   zoneFeedback = 'off';
+  stopAlertTone(); beepOffSince = null; beepOnSince = null;
   stageStates[currentStage] = stageState;
   stageState = stageStates[n] || {};
   currentStage = n;
@@ -2196,6 +2252,9 @@ function classifyPitch(absCents) {
 
 // Zone-based feedback: on / close / off with hysteresis
 let zoneFeedback = 'off';
+let beepAlertEnabled = false;
+let beepOffSince = null;  // performance.now() when pitch first went out of range
+let beepOnSince  = null;  // performance.now() when pitch first returned to zone
 const ZONE_ON = 30;       // cents outside zone to still count as "in"
 const ZONE_ON_EXIT = 45;  // must exceed to leave "on"
 const ZONE_CLOSE = 80;    // cents outside zone for "close"
@@ -2243,6 +2302,7 @@ function mainLoop() {
     // Still render the frozen graph so overlays (cursor line, custom lines) update
     if (vizMode === 'spectro') renderSpectrogram();
     else renderGraph();
+    stopAlertTone(); beepOffSince = null; beepOnSince = null;
     animFrame = requestAnimationFrame(mainLoop);
     return;
   }
@@ -2307,6 +2367,8 @@ function mainLoop() {
     if (lastNoteCents !== ' ') { noteCentsEl.textContent = ' '; lastNoteCents = ' '; lastCentsClass = null; }
     if (lastNoteFreq !== ' ') { noteFreqEl.textContent = ' '; lastNoteFreq = ' '; }
   }
+
+  tickBeepAlert(freq, zoneFeedback);
 
   // Write to unified buffer at fixed slot rate
   if (uniTimes && spectroFreqData) {
@@ -2390,6 +2452,11 @@ async function tryStartSession() {
 
   document.getElementById('refVol').addEventListener('input', e => {
     if (refGain) refGain.gain.value = e.target.value / 100;
+  });
+
+  document.getElementById('beepAlertChk').addEventListener('change', e => {
+    beepAlertEnabled = e.target.checked;
+    if (!beepAlertEnabled) stopAlertTone();
   });
 
   // Apply saved viz preference
@@ -2897,6 +2964,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-<div class="app-footer">v1.5.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v1.5.1 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
