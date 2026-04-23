@@ -29,7 +29,7 @@ Add any new files you reference from the HTML (scripts, stylesheets, fonts, imag
 
 1. **CSS** — custom properties in `:root`, dark theme, responsive breakpoints at 600px
 2. **HTML** — splash screen, main UI (header, stage nav pills, pitch panel with canvas, stage content area, footer nav)
-3. **Note data** — `ALL_NOTES` array (C2–E5), `noteFreq()`, `freqToNote()` with cent offset
+3. **Note data** — `ALL_NOTES` array (C2–E5), `noteFreq()`, `freqToNote()` with cent offset, `deriveWarmupNotes()` for adaptive warm-up sequencing
 4. **Harvard sentences** — `HARVARD` array, 72 lists of 10 sentences each, used in the Sentences stage
 5. **Conversation starters** — `STARTERS` array, used in Free Practice stage
 6. **Audio engine** — `initAudio()` sets up `AnalyserNode` (fftSize 4096), `detectPitch()` does autocorrelation, `detectPitchFFT()` does FFT peak detection (used in spectrogram mode for performance)
@@ -37,7 +37,7 @@ Add any new files you reference from the HTML (scripts, stylesheets, fonts, imag
 8. **Pitch graph** — `renderGraph()`, rolling line chart with note grid, target lines/zones, 10-second window
 9. **Spectrogram** — `renderSpectrogram()`, Friture-style waterfall with double-width ring buffer, log frequency scale, LUT colormap, time-based column advancement (10-second window)
 10. **Custom reference lines** — `customLines` array, right-click to pin, per-line colors, chip list in header
-11. **Stage definitions** — `STAGES` array and per-stage constants (`WARMUP_NOTES`, `COUNT_NOTES`, `TARGET_ZONE`, `VOWELS`)
+11. **Stage definitions** — `ROUTINE.stages` array; each entry has `{id, name, short, type, config}`. The warm-up stage's `config.notes` is the hardcoded fallback; at runtime it is overridden by `stageState.derivedNotes` when the user has set a session target.
 12. **Stage rendering** — `renderCurrentStage()` with a switch on stage ID, each stage has its own timer/substep logic
 13. **Main loop** — `mainLoop()` runs via `requestAnimationFrame`, handles pitch detection, UI updates, and graph/spectrogram rendering. `graphPaused` flag freezes rendering (spacebar toggle); on unpause, `spectroLastColTime` is reset to avoid catch-up burst.
 
@@ -45,12 +45,24 @@ Add any new files you reference from the HTML (scripts, stylesheets, fonts, imag
 
 ### Change target notes and ranges
 
-Edit these constants near the `STAGE DEFINITIONS` section:
+All per-stage notes and zones live in the `ROUTINE.stages` config objects (search `__ROUTINE_START__`):
 
-- `WARMUP_NOTES` — array of note names for the warm-up stage (e.g., `['C3','D3','E3']`)
-- `COUNT_NOTES` — notes used in the counting exercise
-- `TARGET_ZONE` — `{low, high}` note range for blend/sentences/free practice stages
-- `VOWELS` — array of `{vowel, word}` objects for the resonance stage
+- **Warm-up notes** — `ROUTINE.stages[0].config.notes` (hardcoded fallback; overridden at runtime by `deriveWarmupNotes()` — see below)
+- **Counting notes** — `ROUTINE.stages[1].config.notes`
+- **Blend zones** — `ROUTINE.stages[2].config.zone` / `ROUTINE.stages[3].config.zone`
+- **Sentences / Free Practice zones** — `config.zone` on those stages
+- **Resonance note** — `ROUTINE.stages[5].config.note`
+- **Vowels** — `ROUTINE.stages[5].config.steps` array of `{label, description}` objects
+
+### Adaptive warm-up
+
+`deriveWarmupNotes(highNote, count=6, femmeOnly=false)` generates `count` whole-tone steps ending at `highNote`. When `femmeOnly` is true, notes below F3 are skipped (may produce fewer than `count` notes).
+
+At session start the user picks their **highest target note** and optionally enables **femme/androgynous range only** on the splash screen. These are stored in `sessionTargetNote` and `sessionFemmeOnly`. The derived sequence is written into `stageState.derivedNotes` (for stage 0) so it survives navigation away and back.
+
+`renderSustainedTone` uses `stageState.derivedNotes || cfg.notes`, so the hardcoded fallback applies whenever no session target has been set.
+
+The user can also change the target mid-session via the target-note picker in the header; if the current stage is `sustained-tone`, `applyTargetPicker` re-derives notes and re-renders from step 0.
 
 ### Change the stages themselves
 
