@@ -244,6 +244,20 @@ body:has(#main.focus-mode) { overflow: hidden; }
     <div style="margin-top:6px;"><b style="color:var(--accent);">Spacebar</b> pauses/unpauses the graph so you can analyze what's on screen.</div>
     <div style="margin-top:6px;"><b style="color:var(--accent);">Record</b> your full session or individual exercises for playback.</div>
   </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:460px;">
+    <div style="font-size:14px;font-weight:600;color:var(--text);align-self:flex-start;">Your highest target note</div>
+    <div style="display:flex;align-items:center;gap:14px;align-self:flex-start;">
+      <select id="splashTargetNote" style="font-size:16px;font-weight:600;padding:6px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;cursor:pointer;min-width:90px;"></select>
+      <span style="font-size:13px;color:var(--text2);line-height:1.5;">Warm-up exercises will step up to this note.<br>You can adjust it during the session too.</span>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;align-self:flex-start;cursor:pointer;font-size:13px;color:var(--text2);">
+      <input type="checkbox" id="splashFemmeOnly" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
+      Androgynous/femme range only &mdash; skip notes below F3
+    </label>
+    <div id="femmeOnlyWarning" style="display:none;font-size:12px;color:var(--warning);background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.3);border-radius:6px;padding:8px 10px;line-height:1.6;">
+      <strong>For advanced users only.</strong> Only enable this if you are already using a femme or androgynous voice as your default and are comfortable sustaining it. Starting warm-ups above F3 skips the chest-to-mixed transition exercises that are important for earlier-stage training.
+    </div>
+  </div>
   <details class="device-setup" id="deviceSetup">
     <summary>Audio devices</summary>
     <div class="device-row">
@@ -301,6 +315,10 @@ body:has(#main.focus-mode) { overflow: hidden; }
         <div class="vol-control">
           <label>Tone vol</label>
           <input type="range" id="refVol" min="0" max="100" value="60">
+        </div>
+        <div class="vol-control" style="margin-top:4px;">
+          <label for="beepAlertChk">Tone alert when out of range</label>
+          <input type="checkbox" id="beepAlertChk" style="width:14px;height:14px;cursor:pointer;accent-color:var(--target);" title="Play a continuous tone while pitch is out of range (low = too deep, high = too high)">
         </div>
         <div class="target-picker" id="targetPicker">
           <label>Mode</label>
@@ -496,6 +514,38 @@ function noteNameToFreq(name) {
   const semitone = (octave - 4) * 12 + idx - 9;
   return 440 * Math.pow(2, semitone / 12);
 }
+
+// Generate warm-up notes as whole-tone steps ending at highNote (adapts to user target)
+function deriveWarmupNotes(highNote, count = 6, femmeOnly = false) {
+  const highIdx = ALL_NOTES.indexOf(highNote);
+  if (highIdx < 0) return null;
+  const f3Idx = ALL_NOTES.indexOf('F3');
+  const notes = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const idx = highIdx - i * 2; // i=count-1 is lowest, i=0 is highNote
+    if (idx >= 0 && (!femmeOnly || idx >= f3Idx)) notes.push(ALL_NOTES[idx]);
+  }
+  return notes.length > 0 ? notes : null;
+}
+
+// Populate splash target-note selector once the DOM and ALL_NOTES are ready
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('splashTargetNote');
+  const lo = ALL_NOTES.indexOf('C3'), hi = ALL_NOTES.indexOf('E5');
+  for (let i = lo; i <= hi; i++) {
+    const opt = document.createElement('option');
+    opt.value = ALL_NOTES[i];
+    opt.textContent = ALL_NOTES[i];
+    if (ALL_NOTES[i] === 'A#3') opt.selected = true;
+    sel.appendChild(opt);
+  }
+
+  const femmeBox = document.getElementById('splashFemmeOnly');
+  const femmeWarning = document.getElementById('femmeOnlyWarning');
+  femmeBox.addEventListener('change', () => {
+    femmeWarning.style.display = femmeBox.checked ? '' : 'none';
+  });
+});
 
 // Graph note range (default, overridden dynamically by target centering)
 const GRAPH_DEFAULT_LOW_FREQ = noteFreq('A2');
@@ -958,6 +1008,57 @@ function stopReference() {
     refOsc = null; refGain = null;
   }
 }
+
+let alertOsc = null;
+let alertGain = null;
+let alertDir = null; // 'below' | 'above' — track direction so tone updates if pitch crosses both boundaries
+
+function startAlertTone(direction) {
+  if (!toneCtx) return;
+  if (alertOsc && alertDir === direction) return; // already playing the right tone
+  stopAlertTone();
+  alertOsc  = toneCtx.createOscillator();
+  alertGain = toneCtx.createGain();
+  alertOsc.type = 'sine';
+  alertOsc.frequency.value = direction === 'below' ? 330 : 880;
+  alertGain.gain.value = 1.0;
+  alertOsc.connect(alertGain);
+  alertGain.connect(toneCtx.destination);
+  alertOsc.start();
+  alertDir = direction;
+}
+
+function stopAlertTone() {
+  if (!alertOsc) return;
+  const t = toneCtx.currentTime;
+  alertGain.gain.setValueAtTime(alertGain.gain.value, t);
+  alertGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  const osc = alertOsc;
+  setTimeout(() => { try { osc.stop(); } catch(e){} }, 60);
+  alertOsc = null; alertGain = null; alertDir = null;
+}
+
+function tickBeepAlert(freq, zFeedback) {
+  if (!beepAlertEnabled || !graphZone || !freq) {
+    stopAlertTone(); beepOffSince = null; beepOnSince = null; return;
+  }
+  const now = performance.now();
+  if (zFeedback === 'on' || zFeedback === 'close') {
+    beepOffSince = null;
+    if (beepOnSince === null) { beepOnSince = now; return; }
+    if (now - beepOnSince >= 150) { stopAlertTone(); }
+    return;
+  }
+  // Out of range
+  beepOnSince = null;
+  if (beepOffSince === null) { beepOffSince = now; return; }
+  if (now - beepOffSince >= 150) {
+    const zLow  = NOTE_FREQ_MAP[graphZone.low];
+    const zHigh = NOTE_FREQ_MAP[graphZone.high];
+    startAlertTone(freq < zLow ? 'below' : 'above');
+  }
+}
+
 function getPlayableTargetNote() {
   // Singular note selected
   if (targetNoteKey) return targetNoteKey;
@@ -1654,6 +1755,8 @@ function drawCursorLine(leftMargin) {
 
 // ─── APP STATE ───────────────────────────────────────────────────────
 let currentStage = 0;
+let sessionTargetNote = null; // set from splash picker, re-applied on restart
+let sessionFemmeOnly = false;  // skip sub-F3 notes in warm-up when true
 let sessionStartTime = null;
 let sessionTimerInterval = null;
 let stageTimer = null;
@@ -1721,7 +1824,7 @@ const engine = {
 // ─── BUILT-IN STAGE TYPE RENDERERS ──────────────────────────────────
 function renderSustainedTone(el, stage) {
   const cfg = stage.config;
-  const notes = cfg.notes;
+  const notes = stageState.derivedNotes || cfg.notes;
   const step = stageState.step || 0;
   const note = notes[step];
   engine.setTarget(note);
@@ -2079,6 +2182,7 @@ async function setStage(n) {
   stopReference();
   feedbackState = 'off';
   zoneFeedback = 'off';
+  stopAlertTone(); beepOffSince = null; beepOnSince = null;
   stageStates[currentStage] = stageState;
   stageState = stageStates[n] || {};
   currentStage = n;
@@ -2148,6 +2252,9 @@ function classifyPitch(absCents) {
 
 // Zone-based feedback: on / close / off with hysteresis
 let zoneFeedback = 'off';
+let beepAlertEnabled = false;
+let beepOffSince = null;  // performance.now() when pitch first went out of range
+let beepOnSince  = null;  // performance.now() when pitch first returned to zone
 const ZONE_ON = 30;       // cents outside zone to still count as "in"
 const ZONE_ON_EXIT = 45;  // must exceed to leave "on"
 const ZONE_CLOSE = 80;    // cents outside zone for "close"
@@ -2195,6 +2302,7 @@ function mainLoop() {
     // Still render the frozen graph so overlays (cursor line, custom lines) update
     if (vizMode === 'spectro') renderSpectrogram();
     else renderGraph();
+    stopAlertTone(); beepOffSince = null; beepOnSince = null;
     animFrame = requestAnimationFrame(mainLoop);
     return;
   }
@@ -2260,6 +2368,8 @@ function mainLoop() {
     if (lastNoteFreq !== ' ') { noteFreqEl.textContent = ' '; lastNoteFreq = ' '; }
   }
 
+  tickBeepAlert(freq, zoneFeedback);
+
   // Write to unified buffer at fixed slot rate
   if (uniTimes && spectroFreqData) {
     const uniNow = performance.now();
@@ -2307,6 +2417,20 @@ async function tryStartSession() {
   const errEl = document.getElementById('splashError');
   const errMsg = document.getElementById('splashErrorMsg');
   errEl.classList.remove('open');
+
+  // Pre-configure warm-up from the splash target note + femme-only flag
+  sessionFemmeOnly = document.getElementById('splashFemmeOnly').checked;
+  const splashTarget = document.getElementById('splashTargetNote').value;
+  if (splashTarget) {
+    const derived = deriveWarmupNotes(splashTarget, 6, sessionFemmeOnly);
+    if (derived) {
+      // stageState IS the live state for stage 0 (already current); update it directly
+      stageState.derivedNotes = derived;
+      stageStates[0] = stageState;
+      sessionTargetNote = splashTarget;
+    }
+  }
+
   try {
     await initAudio();
     initUnifiedBuffer();
@@ -2328,6 +2452,11 @@ async function tryStartSession() {
 
   document.getElementById('refVol').addEventListener('input', e => {
     if (refGain) refGain.gain.value = e.target.value / 100;
+  });
+
+  document.getElementById('beepAlertChk').addEventListener('change', e => {
+    beepAlertEnabled = e.target.checked;
+    if (!beepAlertEnabled) stopAlertTone();
   });
 
   // Apply saved viz preference
@@ -2587,6 +2716,20 @@ async function tryStartSession() {
     updateTargetRefBtn();
     document.getElementById('targetPicker').classList.remove('open');
     document.getElementById('targetNote').setAttribute('aria-expanded', 'false');
+    // If on a sustained-tone stage, derive new warmup notes from the updated target
+    if (ROUTINE.stages[currentStage].type === 'sustained-tone') {
+      const highNote = graphZone ? graphZone.high : (targetNoteKey || null);
+      if (highNote) {
+        const derived = deriveWarmupNotes(highNote, 6, sessionFemmeOnly);
+        if (derived) {
+          engine.clearTimer();
+          stageState.timerActive = false;
+          stageState.step = 0;
+          stageState.derivedNotes = derived;
+          engine.rerender();
+        }
+      }
+    }
   }
 
   document.getElementById('tpApply').addEventListener('click', applyTargetPicker);
@@ -2607,6 +2750,7 @@ async function tryStartSession() {
   });
 
   document.getElementById('tpReset').addEventListener('click', () => {
+    stageState.derivedNotes = null;
     document.getElementById('targetPicker').classList.remove('open');
     document.getElementById('targetNote').setAttribute('aria-expanded', 'false');
     renderCurrentStage();
@@ -2752,6 +2896,14 @@ document.getElementById('summaryRestartBtn').addEventListener('click', () => {
   stageState = {};
   currentStage = 0;
   sessionStartTime = Date.now();
+  // Re-apply warm-up target from session start
+  if (sessionTargetNote) {
+    const derived = deriveWarmupNotes(sessionTargetNote, 6, sessionFemmeOnly);
+    if (derived) {
+      stageState.derivedNotes = derived;
+      stageStates[0] = stageState;
+    }
+  }
   renderStageNav();
   renderCurrentStage();
   updateNavButtons();
@@ -2812,6 +2964,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-<div class="app-footer">v1.4.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v1.5.1 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
