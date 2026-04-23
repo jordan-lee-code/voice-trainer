@@ -2,7 +2,16 @@
 
 ## Architecture
 
-This is a **single-file HTML app** (`index.html`). No build step, no framework, no dependencies. Everything — CSS, HTML, and JS — lives in one file. Keep it that way.
+The core app is **one HTML file** (`index.html`) — all CSS, HTML, and JS in one place. No build step, no framework, no dependencies. Keep it that way.
+
+A small PWA envelope sits alongside it so users can install the app to their home screen and run it offline:
+
+- `manifest.webmanifest` — name, icons, theme colors
+- `sw.js` — service worker (stale-while-revalidate cache; bump `CACHE_NAME` whenever cached files change)
+- `icon.svg` — single scalable icon used for manifest, favicon, and iOS home screen
+- `generator.html` — standalone page; also cached by the service worker
+
+The PWA files are intentionally minimal and don't require a build step. Do not grow them into a framework layer.
 
 ## Key Sections (in order of appearance in the file)
 
