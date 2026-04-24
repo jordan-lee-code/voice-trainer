@@ -78,8 +78,10 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .stage-card-header input[type=checkbox] {
   width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
 }
-.stage-card-header .stage-title { font-size: 15px; font-weight: 600; flex: 1; }
-.stage-card-header .stage-type { font-size: 11px; color: var(--text2); font-family: monospace; }
+.stage-card-header .stage-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.stage-card-header .stage-title { font-size: 15px; font-weight: 600; }
+.stage-card-header .stage-desc { font-size: 12px; color: var(--text2); font-weight: 400; line-height: 1.4; }
+.stage-card-header .stage-type { font-size: 11px; color: var(--text2); font-family: monospace; align-self: flex-start; flex-shrink: 0; }
 .stage-card-body {
   display: none; padding: 0 16px 16px; border-top: 1px solid var(--border);
 }
@@ -230,6 +232,7 @@ const STAGE_DEFS = [
     label: 'Warm-up',
     typeLabel: 'sustained-tone',
     defaultEnabled: true,
+    desc: 'Sustain each note in a rising sequence, matching the target pitch on the graph. Warms the voice into the session range and builds pitch accuracy.',
     html() {
       return `
         ${noteRangeHtml('wm', 'C3', 'A#3')}
@@ -265,6 +268,7 @@ const STAGE_DEFS = [
     label: 'Counting / Numbers',
     typeLabel: 'repeat-on-note',
     defaultEnabled: false,
+    desc: 'Count aloud on a target note, repeating each set a set number of times. Develops consistent pitch placement on connected speech with minimal cognitive load.',
     html() {
       return `
         ${noteRangeHtml('ct', 'F3', 'G#3')}
@@ -301,6 +305,7 @@ const STAGE_DEFS = [
     label: 'Breath Hold',
     typeLabel: 'timed-hold',
     defaultEnabled: false,
+    desc: 'Sustain a controlled /s/ exhalation for a set duration. Trains diaphragm support and breath economy — essential for avoiding vocal fold strain during extended speech.',
     html() {
       return `
         <div class="cfg-row">
@@ -334,6 +339,7 @@ const STAGE_DEFS = [
     label: 'Soft Onset (initiation)',
     typeLabel: 'timed-hold',
     defaultEnabled: false,
+    desc: 'Practice beginning each sound with a gentle /h/ before the vowel. Eliminates hard glottal attack, reducing tension at the vocal folds and establishing a relaxed onset.',
     html() {
       return `
         <div class="cfg-row">
@@ -371,6 +377,7 @@ const STAGE_DEFS = [
     label: 'Giggle / Voicecraft',
     typeLabel: 'repeat-on-note',
     defaultEnabled: false,
+    desc: 'Rapid repetition of "Hee Hee Hee" spoken then whispered. Conditions the vocal folds through aerobic-style exercise and provides tactile biofeedback via throat vibration.',
     html() {
       return `
         <div class="cfg-row">
@@ -415,6 +422,7 @@ const STAGE_DEFS = [
     label: 'Humming / Chanting (RVT)',
     typeLabel: 'repeat-on-note',
     defaultEnabled: false,
+    desc: 'Sustain a nasal consonant (/m/, /n/, or /ng/) then open to each vowel on one note. Deconstricts the vocal tract, encourages frontal resonance, and reduces supra-laryngeal pressure.',
     html() {
       return `
         <div class="cfg-row">
@@ -463,6 +471,7 @@ const STAGE_DEFS = [
     label: 'Blend Upward',
     typeLabel: 'glide',
     defaultEnabled: false,
+    desc: 'Record a glide from chest voice up into falsetto. Targets the chest-to-head register transition, building smooth, crack-free movement across the passaggio.',
     html() {
       return `
         <div class="cfg-row">
@@ -507,6 +516,7 @@ const STAGE_DEFS = [
     label: 'Blend Downward',
     typeLabel: 'glide',
     defaultEnabled: false,
+    desc: 'Record a glide from falsetto down into chest voice. Reinforces consistent light vocal weight across registers and trains the ear to monitor the transition point.',
     html() {
       return `
         <div class="cfg-row">
@@ -551,6 +561,7 @@ const STAGE_DEFS = [
     label: 'Reading Practice',
     typeLabel: 'read-aloud',
     defaultEnabled: false,
+    desc: 'Read sentences aloud within a target pitch zone. Applies pitch control to real language, developing the ability to maintain the target voice during continuous reading.',
     html() {
       return `
         <div class="cfg-row">
@@ -605,6 +616,7 @@ const STAGE_DEFS = [
     label: 'Resonance / Vowels',
     typeLabel: 'resonance',
     defaultEnabled: false,
+    desc: 'Cycle through a vowel sequence on a single target note. Trains the vocal tract shape that produces a brighter, more forward resonance without changing pitch.',
     html() {
       return `
         <div class="cfg-row">
@@ -655,6 +667,7 @@ OO: as in "through"</textarea>
     label: 'Free Conversation',
     typeLabel: 'free-talk',
     defaultEnabled: false,
+    desc: 'Answer open-ended prompts in the target voice with recording and listen-back. Consolidates all techniques in spontaneous, unscripted speech — the final step before real-world carry-over.',
     html() {
       return `
         <div class="cfg-row">
@@ -760,7 +773,10 @@ function renderStageCards() {
       <div class="stage-card-header" onclick="toggleCard('${def.id}')">
         <input type="checkbox" id="chk-${def.id}" ${def.defaultEnabled ? 'checked' : ''}
           onclick="event.stopPropagation(); toggleCard('${def.id}')">
-        <span class="stage-title">${def.label}</span>
+        <div class="stage-info">
+          <span class="stage-title">${def.label}</span>
+          <span class="stage-desc">${def.desc}</span>
+        </div>
         <span class="stage-type">${def.typeLabel}</span>
       </div>
       <div class="stage-card-body">
