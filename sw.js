@@ -2,7 +2,7 @@
 // Bump CACHE_NAME whenever any cached file changes; the activate handler
 // drops old caches and `clients.claim()` makes the update take effect
 // without requiring a second reload.
-const CACHE_NAME = 'voice-trainer-v4';
+const CACHE_NAME = 'voice-trainer-v11';
 const ASSETS = [
   './',
   './index.html',
@@ -28,21 +28,32 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Stale-while-revalidate for same-origin GETs. Shows the cached copy
-// instantly, refreshes the cache in the background for the next load.
+// Network-first for HTML documents — always serve fresh content when online.
+// Stale-while-revalidate for everything else (icons, manifest, etc.)
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  if (req.destination === 'document') {
+    event.respondWith(
+      fetch(req)
+        .then(resp => {
+          if (resp && resp.ok)
+            caches.open(CACHE_NAME).then(cache => cache.put(req, resp.clone()));
+          return resp;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then(cached => {
       const network = fetch(req).then(resp => {
-        if (resp && resp.ok) {
-          const clone = resp.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
-        }
+        if (resp && resp.ok)
+          caches.open(CACHE_NAME).then(cache => cache.put(req, resp.clone()));
         return resp;
       }).catch(() => cached);
       return cached || network;

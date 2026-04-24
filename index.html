@@ -162,6 +162,39 @@ select { font-family: inherit; background: var(--surface2); color: var(--text); 
 
 /* Conversation starters */
 .starter-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 24px; text-align: center; font-size: 18px; line-height: 1.5; margin: 16px 0; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+.glide-steps { margin: 10px 0 6px; padding-left: 20px; font-size: 14px; color: var(--text2); line-height: 1.7; }
+.glide-steps li { margin-bottom: 2px; }
+.glide-steps li strong { color: var(--text); }
+.intonation-card { text-align: center; padding: 12px 0 20px; }
+.intonation-card svg { display: block; margin: 0 auto 14px; }
+.phrase-text { font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
+.phrase-hint { font-size: 14px; color: var(--text2); font-style: italic; }
+.warmup-accuracy { text-align: center; font-size: 15px; color: var(--text2); padding: 6px 0 2px; }
+.warmup-accuracy strong { color: var(--text); }
+.breath-timer { text-align: center; font-size: 72px; font-weight: 700; font-family: monospace; color: var(--accent); padding: 12px 0; letter-spacing: -2px; }
+.breath-cycle-display { display: flex; justify-content: center; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.breath-phase { display: flex; flex-direction: column; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; min-width: 90px; }
+.breath-phase span { font-size: 20px; font-weight: 700; color: var(--accent); }
+.breath-phase small { font-size: 12px; color: var(--text2); margin-top: 4px; text-align: center; line-height: 1.4; }
+.chant-item { text-align: center; font-size: 42px; font-weight: 800; color: var(--accent); letter-spacing: 4px; padding: 20px 0 8px; font-family: monospace; }
+.exercise-word-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0; }
+.exercise-word-list span { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 15px; color: var(--text); }
+.exercise-word-list span.current { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.exercise-word-list span.done { opacity: 0.35; }
+.larynx-step-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 12px 0; }
+.larynx-step-card h3 { font-size: 16px; font-weight: 700; color: var(--accent); margin: 0 0 8px; }
+.larynx-step-card p { font-size: 14px; color: var(--text2); line-height: 1.7; margin: 0; }
+.summary-note-table { margin-top: 14px; }
+.summary-note-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.summary-note-table td { padding: 4px 8px; }
+.summary-note-table td:first-child { font-family: monospace; font-weight: 600; color: var(--target); }
+.summary-note-table td:nth-child(2) { font-weight: 700; }
+.summary-note-table td:nth-child(3) { color: var(--text2); }
+.history-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.history-table th { text-align: left; font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 8px; font-weight: 600; }
+.history-table td { padding: 6px 8px; border-top: 1px solid var(--border); }
+.history-table tr:first-child td { border-top: none; }
+.history-scroll { max-height: 340px; overflow-y: auto; }
 
 /* Footer nav */
 .footer-nav { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
@@ -245,17 +278,22 @@ body:has(#main.focus-mode) { overflow: hidden; }
     <div style="margin-top:6px;"><b style="color:var(--accent);">Record</b> your full session or individual exercises for playback.</div>
   </div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:460px;">
-    <div style="font-size:14px;font-weight:600;color:var(--text);align-self:flex-start;">Your highest target note</div>
+    <div style="font-size:14px;font-weight:600;color:var(--text);align-self:flex-start;">Your base note</div>
+    <div style="display:flex;align-items:center;gap:14px;align-self:flex-start;">
+      <select id="splashBaseNote" style="font-size:16px;font-weight:600;padding:6px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;cursor:pointer;min-width:90px;"></select>
+      <span style="font-size:13px;color:var(--text2);line-height:1.5;">Your comfortable starting note. Zones and single-note<br>targets will be anchored here.</span>
+    </div>
+    <div style="font-size:14px;font-weight:600;color:var(--text);align-self:flex-start;margin-top:2px;">Your target (peak) note</div>
     <div style="display:flex;align-items:center;gap:14px;align-self:flex-start;">
       <select id="splashTargetNote" style="font-size:16px;font-weight:600;padding:6px 12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;cursor:pointer;min-width:90px;"></select>
-      <span style="font-size:13px;color:var(--text2);line-height:1.5;">Warm-up exercises will step up to this note.<br>You can adjust it during the session too.</span>
+      <span style="font-size:13px;color:var(--text2);line-height:1.5;">Warm-up steps up to this note.<br>You can adjust it during the session too.</span>
     </div>
     <label style="display:flex;align-items:center;gap:8px;align-self:flex-start;cursor:pointer;font-size:13px;color:var(--text2);">
       <input type="checkbox" id="splashFemmeOnly" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
-      Androgynous/femme range only &mdash; skip notes below F3
+      Androgynous/femme range only &mdash; skip notes below F#3
     </label>
     <div id="femmeOnlyWarning" style="display:none;font-size:12px;color:var(--warning);background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.3);border-radius:6px;padding:8px 10px;line-height:1.6;">
-      <strong>For advanced users only.</strong> Only enable this if you are already using a femme or androgynous voice as your default and are comfortable sustaining it. Starting warm-ups above F3 skips the chest-to-mixed transition exercises that are important for earlier-stage training.
+      <strong>For advanced users only.</strong> Only enable this if you are already using a femme or androgynous voice as your default and are comfortable sustaining it. Starting warm-ups above F#3 skips the chest-to-mixed transition exercises that are important for earlier-stage training.
     </div>
   </div>
   <details class="device-setup" id="deviceSetup">
@@ -290,6 +328,7 @@ body:has(#main.focus-mode) { overflow: hidden; }
       <button id="pauseToggleBtn" class="sm" title="Pause/resume the graph (Space)" aria-label="Pause or resume the graph">Pause</button>
       <button id="sessionRecBtn" class="sm">Record Session</button>
       <button id="sessionDownload" class="sm" style="display:none">Download Recording</button>
+      <button id="historyBtn" class="sm" title="Session history">History</button>
       <button id="focusToggleBtn" class="sm" title="Hide stages and focus on the pitch view">Focus</button>
     </div>
   </div>
@@ -407,6 +446,17 @@ body:has(#main.focus-mode) { overflow: hidden; }
       </div>
     </div>
   </div>
+
+  <div class="modal-overlay" id="historyOverlay" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="modal">
+      <h2 id="historyTitle">Session history</h2>
+      <div class="modal-sub">Your last 30 practice sessions.</div>
+      <div class="history-scroll" id="historyBody"></div>
+      <div class="modal-actions">
+        <button id="historyCloseBtn" class="sm primary">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- __ROUTINE_START__ -->
@@ -414,38 +464,75 @@ body:has(#main.focus-mode) { overflow: hidden; }
 const ROUTINE = {
   name: "Voice Training",
   client: "",
-  description: "15-minute feminization practice routine with 7 stages",
+  description: "Comprehensive voice feminisation routine — 15 stages",
 
   stages: [
-    { id: 'warmup', name: '1. Warm-up', short: 'Warm-up', type: 'sustained-tone', config: {
+    { id: 'breath-training', name: '1. Breath Training', short: 'Breath', type: 'breath-training', config: {
+      instruction: 'Good breath support prevents strain on the vocal folds. This stage builds diaphragmatic control and trains steady exhalation — the foundation of everything else.'
+    }},
+    { id: 'giggle', name: '2. Giggle Voicecraft', short: 'Giggle', type: 'giggle', config: {
+      minSessions: 2,
+      instruction: 'The giggle technique re-establishes a normal vibration pattern for the vocal folds, reduces constriction, and builds stamina. Keep shoulders relaxed, head looking forward — do not raise your chin.'
+    }},
+    { id: 'warmup', name: '3. Warm-up', short: 'Warm-up', type: 'sustained-tone', config: {
       notes: ['C3','D3','E3','F#3','G#3','A#3'], duration: 10,
       instruction: 'Sing "ahh" on each note for 10 seconds. Match the target pitch shown on the graph.',
       showReference: true
     }},
-    { id: 'counting', name: '2. Counting', short: 'Counting', type: 'repeat-on-note', config: {
+    { id: 'humming', name: '4. Humming', short: 'Hum', type: 'sustained-tone', config: {
+      notes: ['F3','G#3'], duration: 10,
+      instruction: 'Hum "mmm" on each note. Keep lips loosely closed — do not press them together. Feel vibration in your lips and the front of your face. If you feel it in your chest, let it rise forward into your nose and lips.',
+      showReference: true
+    }},
+    { id: 'soft-onset', name: '5. Soft Onset', short: 'Onset', type: 'soft-onset', config: {
+      instruction: 'Trains soft voice initiation — eliminating the hard glottal attack that adds weight and masculinity to the voice.'
+    }},
+    { id: 'chanting', name: '6. Chanting', short: 'Chant', type: 'chanting', config: {
+      instruction: 'Resonant Voice Therapy: chant each sound on one steady note. Each syllable the same length. Feel nasal resonance building in your lips, nose, and face.'
+    }},
+    { id: 'counting', name: '7. Counting', short: 'Count', type: 'repeat-on-note', config: {
       notes: ['F3','G#3'], reps: 2,
       instruction: 'Count 1 through 5 with soft vocal weight on the target note. 2 repetitions per note.',
       showReference: true, display: '1 &nbsp; 2 &nbsp; 3 &nbsp; 4 &nbsp; 5'
     }},
-    { id: 'blend-up', name: '3. Blend Up', short: 'Blend Up', type: 'glide', config: {
-      direction: 'up', startNote: 'F3', zone: { low: 'F3', high: 'E4' },
+    { id: 'blend-up', name: '8. Blend Up', short: 'Blend ↑', type: 'glide', config: {
+      direction: 'up', startNote: 'F3', zone: { low: 'F3', high: 'D4' },
       referenceNote: 'F3', minAttempts: 3,
-      instruction: 'Start on F3 in chest voice and glide upward into falsetto. Keep vocal weight consistently light throughout. Record each attempt and listen back.'
+      instruction: 'Glide upward through your register break with a siren sound. Minimum 3 attempts — record each one and listen back.',
+      steps: [
+        'Hold the reference tone to find your starting note, then match it in your chest voice.',
+        'Sing "whee" from there — let it glide smoothly up through your break into head voice.',
+        'The "ee" vowel keeps resonance forward and makes the transition easier.',
+        'Aim for a seamless slide with no sudden pop or crack at the break.',
+      ]
     }},
-    { id: 'blend-down', name: '4. Blend Down', short: 'Blend Down', type: 'glide', config: {
-      direction: 'down', startNote: 'F3', zone: { low: 'C3', high: 'F3' },
-      referenceNote: 'F3', minAttempts: 3,
-      instruction: 'Start in falsetto and glide downward into chest voice. Keep vocal weight consistently light with no cracking. Record each attempt and listen back.'
+    { id: 'blend-down', name: '9. Blend Down', short: 'Blend ↓', type: 'glide', config: {
+      direction: 'down', startNote: 'D4', zone: { low: 'B3', high: 'D4' },
+      referenceNote: 'D4', minAttempts: 3,
+      instruction: 'Glide downward from head voice back through the break without losing connection. Minimum 3 attempts — record each one and listen back.',
+      steps: [
+        'Hold the reference tone to find your starting note in head voice / falsetto.',
+        'Sing "whee" from there — let it glide smoothly down through your break.',
+        'Resist letting the voice drop suddenly — keep the tone light and connected all the way.',
+        'A small amount of crack is normal at first; the goal is a smooth, controlled descent.',
+      ]
     }},
-    { id: 'sentences', name: '5. Sentences', short: 'Sentences', type: 'read-aloud', config: {
+    { id: 'breath-sustain', name: '10. Breath Sustain', short: 'Sustain', type: 'breath-sustain', config: {
+      note: 'F3', minAttempts: 3, showReference: true,
+      instruction: "Take a full breath, then sustain a voiced pitch in your target range as long as you can. Try each vowel in turn: 'ah', 'oo', 'ee', 'er', 'or'. The timer starts when your voice is detected and stops after 2.5 seconds of silence."
+    }},
+    { id: 'larynx-elevation', name: '11. Larynx Elevation', short: 'Larynx', type: 'larynx-elevation', config: {
+      instruction: 'A raised larynx shortens the vocal tract, raising resonance and making higher pitch easier to sustain. This exercise builds the three muscle groups responsible.'
+    }},
+    { id: 'sentences', name: '12. Sentences', short: 'Sentences', type: 'read-aloud', config: {
       listsKey: 'sentences', zone: { low: 'F3', high: 'A#3' },
-      instruction: 'Read each sentence inside the target zone (F3\u2013A#3). Aim for soft vocal weight and use all of the range available.',
+      instruction: 'Read each sentence inside the target zone. Aim for soft vocal weight and use all of the range available.',
       recording: true
     }},
-    { id: 'resonance', name: '6. Resonance', short: 'Resonance', type: 'resonance', config: {
+    { id: 'resonance', name: '13. Resonance', short: 'Resonance', type: 'resonance', config: {
       note: 'F3',
-      preamble: 'First, practice achieving a truly dark yawn. Make sure your lips don\'t move (use a mirror or camera to check).',
-      instruction: 'On F3, move from dark to bright through these vowels. Keep lips still\u2014only change the inside of your mouth.',
+      preamble: 'Frontal resonance check: relax your lips and produce a light /b/ then /v/ sound. Feel the buzz in your lips — this is forward resonance placement. Keep this sensation in mind. Then practice a dark yawn — open your throat as wide as possible. Make sure your lips do not move (use a mirror to check).',
+      instruction: 'Move from dark to bright through these vowels. Keep lips still — only change the inside of your mouth.',
       steps: [
         { label: 'A', description: 'as in "pay"' },
         { label: 'E', description: 'as in "see"' },
@@ -454,16 +541,32 @@ const ROUTINE = {
       ],
       showReference: true
     }},
-    { id: 'free', name: '7. Free Practice', short: 'Free', type: 'free-talk', config: {
+    { id: 'intonation', name: '14. Intonation', short: 'Inton.', type: 'intonation', config: {
+      zone: { low: 'F3', high: 'A#3' },
+      instruction: 'Speak each phrase with the indicated pitch shape. Let the rise or fall happen naturally — do not force it.',
+      recording: true,
+      phrases: [
+        { text: 'Good morning!', shape: 'up', hint: 'Let your pitch lift gently on the last syllable.' },
+        { text: 'How are you doing today?', shape: 'up', hint: 'Questions naturally end with rising pitch.' },
+        { text: 'That sounds really lovely.', shape: 'down', hint: 'Warm statements settle gently at the end.' },
+        { text: "Oh, that's so interesting!", shape: 'peak', hint: 'Peak on "interesting" — pitch rises then falls.' },
+        { text: 'Would you like to join us?', shape: 'up', hint: 'A rising end sounds warm and inviting.' },
+        { text: 'I completely forgot!', shape: 'peak', hint: 'Emphasis peak on "completely".' },
+        { text: 'Tell me more about that.', shape: 'valley', hint: 'A gentle dip-rise shows genuine curiosity.' },
+        { text: 'It was absolutely wonderful!', shape: 'peak', hint: 'Let "absolutely" carry the highest pitch.' },
+      ]
+    }},
+    { id: 'free', name: '15. Free Practice', short: 'Free', type: 'free-talk', config: {
       promptsKey: 'starters', zone: { low: 'F3', high: 'A#3' },
       instruction: 'Put everything together. Answer conversation starters in your target voice. Stay in the target zone with soft vocal weight.',
       recording: true
     }},
   ],
 
-  sentences: null, // set after data arrays load
+  sentences: null,
   starters: null,
-};
+  resonantParagraphs: null,
+}
 </script>
 <!-- __ROUTINE_END__ -->
 
@@ -516,36 +619,99 @@ function noteNameToFreq(name) {
 }
 
 // Generate warm-up notes as whole-tone steps ending at highNote (adapts to user target)
-function deriveWarmupNotes(highNote, count = 6, femmeOnly = false) {
-  const highIdx = ALL_NOTES.indexOf(highNote);
+const FEMME_MIN = 'F#3';
+const FEMME_MAX = 'F4';
+
+function deriveWarmupNotes(highNote, count = 6, femmeOnly = false, baseNote = null) {
+  const femmeMinIdx = ALL_NOTES.indexOf(FEMME_MIN);
+  const femmeMaxIdx = ALL_NOTES.indexOf(FEMME_MAX);
+  let highIdx = ALL_NOTES.indexOf(highNote);
   if (highIdx < 0) return null;
-  const f3Idx = ALL_NOTES.indexOf('F3');
+  if (femmeOnly && highIdx > femmeMaxIdx) highIdx = femmeMaxIdx;
+
+  if (baseNote) {
+    let baseIdx = ALL_NOTES.indexOf(baseNote);
+    if (baseIdx < 0) return null;
+    if (femmeOnly && baseIdx < femmeMinIdx) baseIdx = femmeMinIdx;
+    if (baseIdx > highIdx) baseIdx = highIdx;
+    const notes = [];
+    for (let idx = baseIdx; idx < highIdx; idx += 2) notes.push(ALL_NOTES[idx]);
+    notes.push(ALL_NOTES[highIdx]); // always include peak
+    return notes;
+  }
+
   const notes = [];
   for (let i = count - 1; i >= 0; i--) {
-    const idx = highIdx - i * 2; // i=count-1 is lowest, i=0 is highNote
-    if (idx >= 0 && (!femmeOnly || idx >= f3Idx)) notes.push(ALL_NOTES[idx]);
+    const idx = highIdx - i * 2;
+    if (idx >= 0 && (!femmeOnly || idx >= femmeMinIdx)) notes.push(ALL_NOTES[idx]);
   }
   return notes.length > 0 ? notes : null;
 }
 
-// Populate splash target-note selector once the DOM and ALL_NOTES are ready
-document.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('splashTargetNote');
-  const lo = ALL_NOTES.indexOf('C3'), hi = ALL_NOTES.indexOf('E5');
-  for (let i = lo; i <= hi; i++) {
-    const opt = document.createElement('option');
-    opt.value = ALL_NOTES[i];
-    opt.textContent = ALL_NOTES[i];
-    if (ALL_NOTES[i] === 'A#3') opt.selected = true;
-    sel.appendChild(opt);
-  }
+function applyFemmeMin(note) {
+  if (!sessionFemmeOnly) return note;
+  const idx = ALL_NOTES.indexOf(note);
+  const minIdx = ALL_NOTES.indexOf(FEMME_MIN);
+  return idx < minIdx ? FEMME_MIN : note;
+}
 
-  const femmeBox = document.getElementById('splashFemmeOnly');
-  const femmeWarning = document.getElementById('femmeOnlyWarning');
-  femmeBox.addEventListener('change', () => {
-    femmeWarning.style.display = femmeBox.checked ? '' : 'none';
-  });
-});
+function applyFemmeMax(note) {
+  if (!sessionFemmeOnly) return note;
+  const idx = ALL_NOTES.indexOf(note);
+  const maxIdx = ALL_NOTES.indexOf(FEMME_MAX);
+  return idx > maxIdx ? FEMME_MAX : note;
+}
+
+function applyFemmeRange(note) {
+  return applyFemmeMax(applyFemmeMin(note));
+}
+
+// Session-aware zone and note helpers — use base/target from session when set
+function getZoneLow(cfgLow) {
+  if (sessionBaseNote) return applyFemmeMin(sessionBaseNote);
+  return applyFemmeMin(cfgLow);
+}
+function getZoneHigh(cfgHigh) {
+  if (sessionTargetNote) return applyFemmeMax(sessionTargetNote);
+  return applyFemmeMax(cfgHigh);
+}
+function getBaseNote(cfgNote) {
+  if (sessionBaseNote) return applyFemmeRange(sessionBaseNote);
+  return applyFemmeRange(cfgNote);
+}
+function getSessionNotes(cfgNotes) {
+  if (sessionBaseNote && sessionTargetNote) {
+    return [applyFemmeRange(sessionBaseNote), applyFemmeRange(sessionTargetNote)];
+  }
+  return cfgNotes.map(applyFemmeRange);
+}
+
+// Populate splash note selectors. The HTML elements are above the script blocks,
+// so the DOM is ready here — no need to wait for DOMContentLoaded.
+(function populateSplashSelects() {
+  try {
+    const lo = ALL_NOTES.indexOf('C2'), hi = ALL_NOTES.indexOf('E5');
+    const baseSel   = document.getElementById('splashBaseNote');
+    const targetSel = document.getElementById('splashTargetNote');
+    const femmeBox  = document.getElementById('splashFemmeOnly');
+    const femmeWarning = document.getElementById('femmeOnlyWarning');
+    if (!baseSel || !targetSel || !femmeBox) return;
+    for (let i = lo; i <= hi; i++) {
+      const note = ALL_NOTES[i];
+      const bOpt = document.createElement('option');
+      bOpt.value = bOpt.textContent = note;
+      if (note === 'G3') bOpt.selected = true;
+      baseSel.appendChild(bOpt);
+      const tOpt = document.createElement('option');
+      tOpt.value = tOpt.textContent = note;
+      if (note === 'A#3') tOpt.selected = true;
+      targetSel.appendChild(tOpt);
+    }
+    femmeBox.addEventListener('change', () => {
+      if (femmeWarning) femmeWarning.style.display = femmeBox.checked ? '' : 'none';
+    });
+  } catch (e) {}
+}());
 
 // Graph note range (default, overridden dynamically by target centering)
 const GRAPH_DEFAULT_LOW_FREQ = noteFreq('A2');
@@ -678,6 +844,35 @@ const STARTERS_DATA = [
 // Wire data arrays into ROUTINE (kept here to avoid bloating the replaceable ROUTINE block)
 if (ROUTINE.sentences === null) ROUTINE.sentences = HARVARD_DATA;
 if (ROUTINE.starters === null) ROUTINE.starters = STARTERS_DATA;
+
+// ─── CHANTING / RVT DATA ─────────────────────────────────────────────
+const CHANTING_M_VOWELS = ['mah','moh','mee','mor','may','moo'];
+const CHANTING_N_VOWELS = ['nah','noh','nee','nor','nay','noo'];
+const CHANTING_NG_VOWELS = ['ngah','ngoh','ngee','ngor','ngay','ngoo'];
+const CHANTING_M_WORDS = ['Main','Moon','Mate','Mask','Mad','Maybe','Married','Member','Music','Melody','Minimum','Magical','Marmalade','Moronic','Mountainous','Mythology'];
+const CHANTING_M_SHORT = ['Many moons','Making music','Marvellous minis','Merry mermaids','More movement','Making money','Mini munchkins','Monkeys mimic','Making memories','Massive muscles','Much mischief','Miraculous moment'];
+const CHANTING_M_LONG = ['My mother made me more muffins.','Miranda made much mess making marmalade.','Many musicians make magical music.','Mixed metaphors muddle many minds.','Many mini minors merrily milled round Manchester.','Mary\'s mischievous munchkins made marvellous marshmallows.'];
+const CHANTING_N_WORDS = ['Nurse','Now','None','New','Nose','Napkin','Nesting','Noisy','Noble','Norway','Nasal','Nowhere','Never','Nearer','National'];
+const CHANTING_N_SHORT = ['Not nice','Never noisy','Neat niche','Near neighbour','Nine needles','Near noon','Naughty gnomes','Nearly knew','Neat naval','Nifty Nicola','Nursery nurse','Nightingale nest'];
+const CHANTING_N_LONG = ['Nicola knows nothing.','Never needed nursing.','Nina never needed night nursing.','Norwegian navy navigated north.','Naomi never normally nibbles nectarines.','Nobody needs nasty news.'];
+
+// ─── SOFT ONSET DATA ─────────────────────────────────────────────────
+const SOFT_ONSET_H_WORDS = ['Height','Hairy','Harry','Henry','Hurry','Hoover','Hero','Higher','Helen','Hardly','Healing','Human','Heaven','Hopping','Habit','Happy','Hilarious'];
+const SOFT_ONSET_H_SHORT = ['Henry Higgins','Hello Harriet','Happy holidays','Hardly here','Harvest festival','Hairy monkey','Helen cried','Heavy stones','Harvey\'s hungry','Hedgehogs hibernate'];
+const SOFT_ONSET_H_LONG = ['Hard of hearing','Howling hounds are hoarse','How high is Harry','High Himalayas','Hungry horses hate hot hay','Hello happy Hermione Hargreaves','Holidays have hilarious happenings','Hairdressers have highlights'];
+const SOFT_ONSET_V_WORDS = ['All','In','Out','Of','Over','Under','Angels','Outside','Action','Even','Ever','Igloo','Orange','Ugly','Island','Echo','Always','Enter'];
+const SOFT_ONSET_V_SHORT = ['All alone','Eleven loaves','Over there','In the oven','Over the road','Aim high','Even so','In a minute','Over the moon','Under the weather','Easy pickings'];
+const SOFT_ONSET_V_LONG = ['At our aged aunts abode','I\'m all ears and eyes and everything else','Anita always appears out of order','Annie ate an apple in August','Electric eels always eat everything','Elephants only eat ice at Easter','Owls are always in our attic'];
+
+// ─── RESONANT PARAGRAPHS ─────────────────────────────────────────────
+const RESONANT_PARAGRAPHS_DATA = [
+  "Poor Michael, he can't seem to work out why his Marigolds keep wilting so quickly. Maybe it's because he's watering them from on top. Mind you, having said that about Michael, Myrtle burns her Mimosa leaves by watering them in full sun! Someone should tell Michael and Myrtle what they're doing wrong. They both massively love their gardens, but are becoming mighty frustrated with their lack of gardening skills.",
+  "“Mmmm” says Moira, “Ok, I accept that you may not be able to perform your psychic powers to order, but you do go around calling yourself a psychic, don’t you? So come on then, make a prediction.” Moira’s glaring at me, almost challenging me and there’s a very long and awkward moment. It most likely lasts for maybe a minute, but it feels like many more. I must have been mad to agree to do this.",
+  "Melanie had the perfect idea for a new restaurant. She wanted to make and sell clam hamburgers. If everyone loved clams as much as Melanie did, her new restaurant would be a massive success. She would make clam muffins, clam ice cream and clam tomato pie. She told her friend Michaela about her idea. Michaela told Melanie that she must start asking people if they would actually consider eating those kinds of foods!",
+  "Nora’s notorious smoothie party was in nine hours and she needed groceries. She wanted her friends to make any kind of smoothie they wanted. At the shops Nora bought honey, peanut butter, neopolitan ice cream, nachos, doughnuts, dinner rolls, sandwiches, nuggets, nutmeg, nectarines, rainbow sherbets and some more blenders. “Tonight’s going to be legendary” Nora thought.",
+  "Daniella didn’t know what she wanted to be when she left school. She was interested in so many things that she found it hard to choose just one. Her friend’s uncle was a fireman. This interested her. Another profession that interested Daniella was nursing as she really wanted to help people when they weren’t well. “I could make a good nurse” Daniella thought, as she ran off and snatched a handful of magazines from the kitchen table.",
+];
+if (ROUTINE.resonantParagraphs === null) ROUTINE.resonantParagraphs = RESONANT_PARAGRAPHS_DATA;
 
 // ─── AUDIO ENGINE ────────────────────────────────────────────────────
 let audioCtx = null;
@@ -1757,10 +1952,12 @@ function drawCursorLine(leftMargin) {
 let currentStage = 0;
 let sessionTargetNote = null; // set from splash picker, re-applied on restart
 let sessionFemmeOnly = false;  // skip sub-F3 notes in warm-up when true
+let sessionBaseNote = null;    // user's starting/lowest note; zones and targets derive from this
 let sessionStartTime = null;
 let sessionTimerInterval = null;
 let stageTimer = null;
 let stageTimerEnd = null;
+let autoAdvTimer = null;
 let stageState = {}; // per-stage state for the CURRENT stage
 let stageStates = {}; // { [stageIdx]: stageState } — preserved across navigation
 let isExRecording = false;
@@ -1824,7 +2021,7 @@ const engine = {
 // ─── BUILT-IN STAGE TYPE RENDERERS ──────────────────────────────────
 function renderSustainedTone(el, stage) {
   const cfg = stage.config;
-  const notes = stageState.derivedNotes || cfg.notes;
+  const notes = stageState.derivedNotes ? stageState.derivedNotes.map(applyFemmeRange) : getSessionNotes(cfg.notes);
   const step = stageState.step || 0;
   const note = notes[step];
   engine.setTarget(note);
@@ -1852,34 +2049,88 @@ function renderSustainedTone(el, stage) {
     if (stageState.step >= notes.length) { stageState.step = 0; engine.complete(); }
     else engine.rerender();
   };
-  document.getElementById('stageSkipBtn').onclick = () => { engine.clearTimer(); advance(); };
+  const autoAdvEnabled = localStorage.getItem('vt-autoadvance') === 'true';
+  if (step < notes.length - 1) {
+    const chkLabel = document.createElement('label');
+    chkLabel.style.cssText = 'font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;justify-content:center;margin-top:6px;cursor:pointer;';
+    chkLabel.innerHTML = `<input type="checkbox" id="autoAdvChk" ${autoAdvEnabled ? 'checked' : ''}> Auto-advance after timer`;
+    el.appendChild(chkLabel);
+    document.getElementById('autoAdvChk').onchange = e => {
+      localStorage.setItem('vt-autoadvance', e.target.checked ? 'true' : 'false');
+    };
+  }
+
+  document.getElementById('stageSkipBtn').onclick = () => {
+    clearTimeout(autoAdvTimer); autoAdvTimer = null;
+    engine.clearTimer(); advance();
+  };
   document.getElementById('stageStartBtn').onclick = function() {
     if (stageState.timerActive) return;
     stageState.timerActive = true;
+    stageState.pitchFrames = 0;
+    stageState.onFrames = 0;
+    stageState.pitchValues = [];
+    if (!stageState.noteAccuracy) stageState.noteAccuracy = [];
     this.disabled = true;
     this.textContent = 'Sustaining...';
     engine.startTimer(document.getElementById('stageTimerEl'), cfg.duration, () => {
       stageState.timerActive = false;
+      const pct = stageState.pitchFrames > 0
+        ? Math.round(stageState.onFrames / stageState.pitchFrames * 100) : 0;
+      let stabilityCents = 0;
+      if (stageState.pitchValues.length > 1) {
+        const mean = stageState.pitchValues.reduce((a, b) => a + b, 0) / stageState.pitchValues.length;
+        const variance = stageState.pitchValues.reduce((a, b) => a + (b - mean) ** 2, 0) / stageState.pitchValues.length;
+        stabilityCents = Math.round(Math.sqrt(variance));
+      }
+      const stabilityLabel = stabilityCents <= 12 ? 'Steady' : stabilityCents <= 25 ? 'Uneven' : 'Wobbly';
+      stageState.noteAccuracy[step] = { note, pct, stabilityCents, stabilityLabel };
+
       const btn = document.getElementById('stageStartBtn');
       if (btn) btn.style.display = 'none';
       const controls = document.getElementById('stageStartBtn')?.parentElement;
       if (!controls) return;
-      const retryBtn = document.createElement('button');
-      retryBtn.textContent = 'Retry Note';
-      retryBtn.onclick = () => { stageState.timerActive = false; engine.rerender(); };
-      const nextBtn = document.createElement('button');
-      nextBtn.textContent = step >= notes.length - 1 ? 'Finish' : 'Next Note';
-      nextBtn.className = 'primary';
-      nextBtn.onclick = advance;
-      controls.appendChild(retryBtn);
-      controls.appendChild(nextBtn);
+      const accDiv = document.createElement('div');
+      accDiv.className = 'warmup-accuracy';
+      accDiv.innerHTML = `On-pitch: <strong>${pct}%</strong> &nbsp;|&nbsp; Stability: \xb1${stabilityCents} cents (${stabilityLabel})`;
+      controls.parentElement.insertBefore(accDiv, controls);
+
+      const isAutoAdv = localStorage.getItem('vt-autoadvance') === 'true';
+      if (isAutoAdv && step < notes.length - 1) {
+        const msgEl = document.createElement('div');
+        msgEl.style.cssText = 'text-align:center;font-size:14px;color:var(--text2);padding:4px 0';
+        controls.parentElement.insertBefore(msgEl, controls);
+        const goBtn = document.createElement('button');
+        goBtn.textContent = 'Go now';
+        goBtn.className = 'sm';
+        goBtn.onclick = () => { clearTimeout(autoAdvTimer); autoAdvTimer = null; advance(); };
+        controls.appendChild(goBtn);
+        let secs = 3;
+        const tick = () => {
+          if (secs <= 0) { autoAdvTimer = null; advance(); return; }
+          msgEl.textContent = `Next note in ${secs}…`;
+          secs--;
+          autoAdvTimer = setTimeout(tick, 1000);
+        };
+        autoAdvTimer = setTimeout(tick, 100);
+      } else {
+        const retryBtn = document.createElement('button');
+        retryBtn.textContent = 'Retry Note';
+        retryBtn.onclick = () => { stageState.timerActive = false; engine.rerender(); };
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = step >= notes.length - 1 ? 'Finish' : 'Next Note';
+        nextBtn.className = 'primary';
+        nextBtn.onclick = advance;
+        controls.appendChild(retryBtn);
+        controls.appendChild(nextBtn);
+      }
     });
   };
 }
 
 function renderRepeatOnNote(el, stage) {
   const cfg = stage.config;
-  const notes = cfg.notes;
+  const notes = getSessionNotes(cfg.notes);
   const reps = cfg.reps || 2;
   const step = stageState.step || 0;
   const totalSteps = notes.length * reps;
@@ -1916,36 +2167,43 @@ function renderGlide(el, stage) {
   if (!stageState.attempts) stageState.attempts = 0;
   if (!stageState.recordings) stageState.recordings = [];
 
+  const glideStart = cfg.direction === 'up'
+    ? getBaseNote(cfg.startNote)
+    : getZoneHigh(cfg.zone?.high || cfg.startNote);
+  const glideRef = cfg.direction === 'up'
+    ? getBaseNote(cfg.referenceNote || cfg.startNote)
+    : getZoneHigh(cfg.zone?.high || cfg.referenceNote);
   if (cfg.zone) {
-    graphZone = { low: cfg.zone.low, high: cfg.zone.high };
-    if (cfg.referenceNote) graphTargets = [cfg.referenceNote];
+    graphZone = { low: getZoneLow(cfg.zone.low), high: getZoneHigh(cfg.zone.high) };
+    if (glideRef) graphTargets = [glideRef];
     targetNoteKey = null;
     updateTargetRefBtn();
   }
   if (cfg.direction === 'up') {
-    document.getElementById('targetNote').textContent = cfg.startNote + ' \u2191';
+    document.getElementById('targetNote').textContent = glideStart + ' \u2191';
     graphCenterFreq = NOTE_FREQ_MAP['A3'];
   } else {
-    document.getElementById('targetNote').textContent = '\u2193 ' + cfg.startNote;
+    document.getElementById('targetNote').textContent = '\u2193 ' + glideStart;
     graphCenterFreq = NOTE_FREQ_MAP['D3'];
   }
 
   el.innerHTML = `
     <div class="stage-title">${stage.name}</div>
-    <div class="stage-desc">${cfg.instruction} Minimum ${cfg.minAttempts} attempts.</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    ${cfg.steps ? `<ol class="glide-steps">${cfg.steps.map(s => `<li>${s}</li>`).join('')}</ol>` : ''}
     <div style="text-align:center;padding:8px 0;">
       <span style="font-size:14px;color:var(--text2)">Attempts: </span>
       <span style="font-size:24px;font-weight:700;color:${stageState.attempts >= cfg.minAttempts ? 'var(--success)' : 'var(--text)'}">${stageState.attempts}</span>
       <span style="font-size:14px;color:var(--text2)"> / ${cfg.minAttempts} minimum</span>
     </div>
     <div class="controls controls-center">
-      ${cfg.referenceNote ? `<button id="stageRefBtn">Hold for ${cfg.referenceNote}</button>` : ''}
+      ${glideRef ? `<button id="stageRefBtn">Hold for ${glideRef}</button>` : ''}
       <button id="stageRecBtn" class="${isExRecording ? 'danger' : 'primary'}">${isExRecording ? 'Stop Recording' : 'Record Attempt'}</button>
     </div>
     <div class="recordings" id="stageRecs"></div>
   `;
   engine.renderRecordings('stageRecs', stageState.recordings);
-  if (cfg.referenceNote) engine.bindHoldRef('stageRefBtn', cfg.referenceNote);
+  if (glideRef) engine.bindHoldRef('stageRefBtn', glideRef);
   document.getElementById('stageRecBtn').onclick = async () => {
     if (isExRecording) {
       isExRecording = false;
@@ -1968,7 +2226,7 @@ function renderReadAloud(el, stage) {
   if (stageState.itemIdx == null) stageState.itemIdx = 0;
   if (!stageState.recordings) stageState.recordings = [];
 
-  if (cfg.zone) engine.setZone(cfg.zone.low, cfg.zone.high);
+  if (cfg.zone) engine.setZone(getZoneLow(cfg.zone.low), getZoneHigh(cfg.zone.high));
   else engine.clearFeedback();
 
   const list = lists[stageState.listIdx];
@@ -2032,7 +2290,8 @@ function renderReadAloud(el, stage) {
 function renderResonanceType(el, stage) {
   const cfg = stage.config;
   if (stageState.step == null) stageState.step = 0;
-  engine.setTarget(cfg.note);
+  const resonanceNote = getBaseNote(cfg.note);
+  engine.setTarget(resonanceNote);
 
   const inPreamble = stageState.step === 0 && cfg.preamble;
   const steps = cfg.steps;
@@ -2044,7 +2303,7 @@ function renderResonanceType(el, stage) {
     ${inPreamble ? `
       <div style="text-align:center;padding:20px 0;font-size:20px;color:var(--target)">Practice Dark Yawn</div>
       <div class="controls controls-center">
-        ${cfg.showReference ? '<button id="stageRefBtn">Hold for ' + cfg.note + '</button>' : ''}
+        ${cfg.showReference ? '<button id="stageRefBtn">Hold for ' + resonanceNote + '</button>' : ''}
         <button id="stageNextBtn" class="primary">Ready \u2014 Move to Steps</button>
       </div>
     ` : `
@@ -2058,12 +2317,12 @@ function renderResonanceType(el, stage) {
       </div>
       <div class="substep-label">Step ${vowelStep + 1} of ${steps.length}: <strong style="color:var(--target)">${steps[vowelStep]?.label || ''}</strong> ${steps[vowelStep]?.description || ''}</div>
       <div class="controls controls-center">
-        ${cfg.showReference ? '<button id="stageRefBtn">Hold for ' + cfg.note + '</button>' : ''}
+        ${cfg.showReference ? '<button id="stageRefBtn">Hold for ' + resonanceNote + '</button>' : ''}
         <button id="stageNextBtn" class="primary">${vowelStep >= steps.length - 1 ? 'Done' : 'Next Step'}</button>
       </div>
     `}
   `;
-  if (cfg.showReference) engine.bindHoldRef('stageRefBtn', cfg.note);
+  if (cfg.showReference) engine.bindHoldRef('stageRefBtn', resonanceNote);
   document.getElementById('stageNextBtn').onclick = () => {
     stageState.step++;
     const totalSteps = steps.length + (cfg.preamble ? 1 : 0);
@@ -2075,28 +2334,49 @@ function renderResonanceType(el, stage) {
 function renderFreeTalk(el, stage) {
   const cfg = stage.config;
   const prompts = ROUTINE[cfg.promptsKey];
+  const resonant = ROUTINE.resonantParagraphs;
   if (!prompts || !prompts.length) { el.innerHTML = '<div class="stage-title">No prompts available</div>'; return; }
   if (stageState.promptIdx == null) stageState.promptIdx = Math.floor(Math.random() * prompts.length);
   if (!stageState.recordings) stageState.recordings = [];
+  if (!stageState.mode) stageState.mode = 'starters';
+  if (stageState.resonantIdx == null) stageState.resonantIdx = 0;
 
-  if (cfg.zone) engine.setZone(cfg.zone.low, cfg.zone.high);
+  if (cfg.zone) engine.setZone(getZoneLow(cfg.zone.low), getZoneHigh(cfg.zone.high));
   else engine.clearFeedback();
+
+  const isResonant = stageState.mode === 'resonant' && resonant && resonant.length;
+  const currentContent = isResonant ? resonant[stageState.resonantIdx] : prompts[stageState.promptIdx];
+  const cardStyle = isResonant ? 'font-size:14px;text-align:left;line-height:1.8;' : '';
+  const stageDesc = isResonant
+    ? 'Read this passage aloud at one resonant note. Forward placement, soft onset, feel the /m/ and /n/ resonance.'
+    : cfg.instruction;
 
   el.innerHTML = `
     <div class="stage-title">${stage.name}</div>
-    <div class="stage-desc">${cfg.instruction}</div>
-    <div class="starter-card" id="starterCard">${prompts[stageState.promptIdx]}</div>
+    <div class="stage-desc">${stageDesc}</div>
+    <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:6px">
+      <button id="modeStarters" class="sm${!isResonant?' active':''}">Conversation</button>
+      <button id="modeResonant" class="sm${isResonant?' active':''}" ${resonant&&resonant.length?'':'disabled'}>Resonant Reading</button>
+    </div>
+    <div class="starter-card" id="starterCard" style="${cardStyle}">${currentContent}</div>
     <div class="controls controls-center">
-      <button id="newPromptBtn">New Question</button>
+      <button id="newContentBtn">${isResonant?'Next Passage':'New Question'}</button>
       ${cfg.recording ? `<button id="stageRecBtn" class="${isExRecording ? 'danger' : 'primary'}">${isExRecording ? 'Stop Recording' : 'Record'}</button>` : ''}
     </div>
     <div class="recordings" id="stageRecs"></div>
   `;
   engine.renderRecordings('stageRecs', stageState.recordings);
 
-  document.getElementById('newPromptBtn').onclick = () => {
-    stageState.promptIdx = Math.floor(Math.random() * prompts.length);
-    document.getElementById('starterCard').textContent = prompts[stageState.promptIdx];
+  document.getElementById('modeStarters').onclick = () => { stageState.mode = 'starters'; engine.rerender(); };
+  document.getElementById('modeResonant').onclick = () => { stageState.mode = 'resonant'; engine.rerender(); };
+
+  document.getElementById('newContentBtn').onclick = () => {
+    if (stageState.mode === 'resonant' && resonant && resonant.length) {
+      stageState.resonantIdx = (stageState.resonantIdx + 1) % resonant.length;
+    } else {
+      stageState.promptIdx = Math.floor(Math.random() * prompts.length);
+    }
+    engine.rerender();
   };
   if (cfg.recording) {
     document.getElementById('stageRecBtn').onclick = async () => {
@@ -2112,6 +2392,121 @@ function renderFreeTalk(el, stage) {
       }
     };
   }
+}
+
+function renderIntonation(el, stage) {
+  const cfg = stage.config;
+  if (stageState.phraseIdx == null) stageState.phraseIdx = 0;
+  if (!stageState.recordings) stageState.recordings = [];
+  engine.setZone(getZoneLow(cfg.zone.low), getZoneHigh(cfg.zone.high));
+
+  const phrases = cfg.phrases;
+  const idx = stageState.phraseIdx;
+  const phrase = phrases[idx];
+  const isLast = idx >= phrases.length - 1;
+
+  const SVG_POINTS = {
+    up:     '10,35 110,5',
+    down:   '10,5 110,35',
+    peak:   '10,35 60,5 110,35',
+    valley: '10,5 60,35 110,5',
+  };
+  const contourSvg = `<svg viewBox="0 0 120 40" width="120" height="40" aria-hidden="true">
+    <polyline points="${SVG_POINTS[phrase.shape]}" stroke="var(--accent)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div class="substep-dots" id="stepDots"></div>
+    <div class="intonation-card">
+      ${contourSvg}
+      <div class="phrase-text">${phrase.text}</div>
+      <div class="phrase-hint">${phrase.hint}</div>
+    </div>
+    <div class="controls controls-center">
+      <button id="phrasePrevBtn" class="sm" ${idx === 0 ? 'disabled' : ''}>Prev</button>
+      <button id="phraseNextBtn" class="primary">${isLast ? 'Finish' : 'Next Phrase'}</button>
+      ${cfg.recording ? `<button id="stageRecBtn" class="sm ${isExRecording ? 'danger' : ''}">${isExRecording ? 'Stop Rec' : 'Record'}</button>` : ''}
+    </div>
+    <div class="recordings" id="stageRecs"></div>
+  `;
+
+  document.getElementById('stepDots').innerHTML = phrases.map((_, i) =>
+    `<div class="substep-dot ${i < idx ? 'done' : (i === idx ? 'active' : '')}"></div>`
+  ).join('');
+
+  engine.renderRecordings('stageRecs', stageState.recordings);
+
+  document.getElementById('phrasePrevBtn').onclick = () => {
+    if (stageState.phraseIdx > 0) { stageState.phraseIdx--; engine.rerender(); }
+  };
+  document.getElementById('phraseNextBtn').onclick = () => {
+    stageState.phraseIdx++;
+    if (stageState.phraseIdx >= phrases.length) { stageState.phraseIdx = 0; engine.complete(); }
+    else engine.rerender();
+  };
+  if (cfg.recording) {
+    document.getElementById('stageRecBtn').onclick = async () => {
+      if (isExRecording) {
+        isExRecording = false;
+        const url = await engine.stopRecording();
+        if (url) stageState.recordings.push(url);
+        engine.rerender();
+      } else {
+        isExRecording = true;
+        engine.startRecording();
+        engine.rerender();
+      }
+    };
+  }
+}
+
+function endBreathAttempt() {
+  if (stageState.holdMs > (stageState.bestMs || 0)) stageState.bestMs = stageState.holdMs;
+  stageState.attempts = (stageState.attempts || 0) + 1;
+  stageState.running = false;
+  stageState.holdStart = null;
+  stageState.silenceStart = null;
+  engine.rerender();
+}
+
+function renderBreathSustain(el, stage) {
+  const cfg = stage.config;
+  if (stageState.attempts == null) stageState.attempts = 0;
+  if (stageState.bestMs == null) stageState.bestMs = 0;
+  const breathNote = getBaseNote(cfg.note);
+  engine.setTarget(breathNote);
+
+  const minAttempts = cfg.minAttempts || 3;
+  const bestSec = (stageState.bestMs / 1000).toFixed(1);
+  const currentSec = stageState.running ? (stageState.holdMs / 1000 || 0).toFixed(1) : '--';
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div class="breath-timer" id="breathTimerEl">${currentSec}</div>
+    ${stageState.bestMs > 0 ? `<div style="text-align:center;font-size:14px;color:var(--text2);margin-bottom:8px">Best this session: <strong style="color:var(--text)">${bestSec}s</strong></div>` : ''}
+    <div style="text-align:center;padding:6px 0">
+      <span style="font-size:14px;color:var(--text2)">Attempts: </span>
+      <span style="font-size:24px;font-weight:700;color:${stageState.attempts >= minAttempts ? 'var(--success)' : 'var(--text)'}">${stageState.attempts}</span>
+      <span style="font-size:14px;color:var(--text2)"> / ${minAttempts} minimum</span>
+    </div>
+    <div class="controls controls-center">
+      ${cfg.showReference ? `<button id="stageRefBtn">Hold for ${breathNote}</button>` : ''}
+      <button id="breathStartBtn" class="${stageState.running ? '' : 'primary'}" ${stageState.running ? 'disabled' : ''}>${stageState.running ? 'Listening…' : 'Start Attempt'}</button>
+    </div>
+  `;
+
+  if (cfg.showReference) engine.bindHoldRef('stageRefBtn', breathNote);
+  document.getElementById('breathStartBtn').onclick = () => {
+    if (stageState.running) return;
+    stageState.running = true;
+    stageState.holdStart = null;
+    stageState.holdMs = 0;
+    stageState.silenceStart = null;
+    engine.rerender();
+  };
 }
 
 function renderTimedHold(el, stage) {
@@ -2142,6 +2537,381 @@ function renderTimedHold(el, stage) {
   };
 }
 
+
+function renderBreathTraining(el, stage) {
+  const cfg = stage.config;
+  engine.clearFeedback();
+  graphCenterFreq = null;
+  if (stageState.step == null) stageState.step = 0;
+
+  const STEPS = [
+    { type: 'info' },
+    { type: 'cycle', count: 3 },
+    { type: 'cycle', count: 5 },
+    { type: 'cycle', count: 7 },
+    { type: 'consonant', sound: '/s/', duration: 20, hint: 'Air only through the teeth — no voice. Work up to 15–20 seconds.' },
+    { type: 'consonant', sound: '/sh/', duration: 15, hint: 'Soft /sh/ sound. Work up to 10–15 seconds.' },
+    { type: 'consonant', sound: '/f/', duration: 15, hint: 'Upper teeth on lower lip. Work up to 10–15 seconds.' },
+    { type: 'consonant', sound: '/th/', duration: 15, hint: 'Tongue tip gently at upper teeth. Work up to 10–15 seconds.' },
+  ];
+
+  const s = STEPS[stageState.step];
+  const isLast = stageState.step >= STEPS.length - 1;
+  let innerHtml = '';
+
+  if (s.type === 'info') {
+    innerHtml = `
+      <div class="stage-desc">${cfg.instruction}</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin:12px 0;font-size:14px;line-height:1.9;color:var(--text2)">
+        • Place one hand on your chest and one on your abdomen<br>
+        • When breathing correctly, your abdomen rises — not your chest or shoulders<br>
+        • Relax your shoulders. Keep your chin parallel to the floor<br>
+        • Breathe in gently through your nose; out slowly through your nose or mouth<br>
+        • Pause briefly between breaths to avoid hyperventilation
+      </div>
+      <div class="controls controls-center">
+        <button id="btNext" class="primary">Ready — Start Breath Cycles</button>
+      </div>`;
+  } else if (s.type === 'cycle') {
+    innerHtml = `
+      <div style="font-size:15px;font-weight:600;color:var(--text);text-align:center;margin-bottom:4px">Breath Cycle — Count of ${s.count}</div>
+      <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:10px">Repeat 2–3 times. During the hold your larynx will elevate slightly.</div>
+      <div class="breath-cycle-display">
+        <div class="breath-phase"><span>IN</span><small>through nose</small></div>
+        <div class="breath-phase"><span>HOLD</span><small>count ${s.count}</small></div>
+        <div class="breath-phase"><span>OUT</span><small>count ${s.count}</small></div>
+      </div>
+      <div class="controls controls-center">
+        <button id="btNext" class="primary">${isLast ? 'Finish' : 'Done — Next'}</button>
+      </div>`;
+  } else {
+    innerHtml = `
+      <div style="font-size:15px;font-weight:600;color:var(--text);text-align:center;margin-bottom:2px">${s.sound} Exhalation</div>
+      <div class="chant-item">${s.sound}</div>
+      <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:10px">${s.hint}</div>
+      <div class="stage-timer" id="stageTimerEl">${s.duration}.0</div>
+      <div class="controls controls-center">
+        <button id="btStartTimer" class="primary" ${stageState.timerActive ? 'disabled' : ''}>${stageState.timerActive ? 'In progress…' : `Start ${s.duration}s Timer`}</button>
+        ${!stageState.timerActive ? `<button id="btNext" class="sm">${isLast ? 'Finish' : 'Skip'}</button>` : ''}
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="substep-dots" id="stepDots"></div>
+    ${innerHtml}
+  `;
+  document.getElementById('stepDots').innerHTML = STEPS.map((_, i) =>
+    `<div class="substep-dot ${i < stageState.step ? 'done' : (i === stageState.step ? 'active' : '')}"></div>`
+  ).join('');
+
+  const advance = () => {
+    stageState.timerActive = false;
+    stageState.step++;
+    if (stageState.step >= STEPS.length) { stageState.step = 0; engine.complete(); }
+    else engine.rerender();
+  };
+  document.getElementById('btNext')?.addEventListener('click', advance);
+  if (s.type === 'consonant') {
+    document.getElementById('btStartTimer')?.addEventListener('click', function() {
+      if (stageState.timerActive) return;
+      stageState.timerActive = true;
+      this.disabled = true;
+      this.textContent = 'In progress…';
+      engine.startTimer(document.getElementById('stageTimerEl'), s.duration, advance);
+    });
+  }
+}
+
+function renderGiggle(el, stage) {
+  const cfg = stage.config;
+  engine.clearFeedback();
+  graphCenterFreq = null;
+  if (stageState.sessions == null) stageState.sessions = 0;
+  if (!stageState.groupSize) stageState.groupSize = 5;
+
+  const minSessions = cfg.minSessions || 2;
+  const done = stageState.sessions >= minSessions;
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div style="text-align:center;padding:14px 0 6px">
+      <div style="font-size:28px;font-weight:800;color:var(--accent);letter-spacing:5px;margin-bottom:6px">Hee Hee Hee Hee Hee</div>
+      <div style="font-size:13px;color:var(--text2)">Whispered — place fingers lightly on your throat to confirm no vibration</div>
+    </div>
+    <div style="text-align:center;margin:8px 0">
+      <span style="font-size:13px;color:var(--text2)">Group size: </span>
+      ${[3,5,7].map(n => `<button id="gs${n}" class="sm${stageState.groupSize === n ? ' active' : ''}" style="margin:0 3px" ${stageState.timerActive ? 'disabled' : ''}>${n}</button>`).join('')}
+    </div>
+    <div class="stage-timer" id="stageTimerEl">60.0</div>
+    <div style="text-align:center;padding:4px 0">
+      <span style="font-size:14px;color:var(--text2)">Sessions: </span>
+      <span style="font-size:24px;font-weight:700;color:${done ? 'var(--success)' : 'var(--text)'}">${stageState.sessions}</span>
+      <span style="font-size:14px;color:var(--text2)"> / ${minSessions} minimum</span>
+    </div>
+    <div class="controls controls-center">
+      <button id="giggleStartBtn" class="primary">${stageState.sessions > 0 ? 'Repeat (1 minute)' : 'Start (1 minute)'}</button>
+    </div>
+  `;
+  [3,5,7].forEach(n => {
+    document.getElementById(`gs${n}`)?.addEventListener('click', () => {
+      if (stageState.timerActive) return;
+      stageState.groupSize = n;
+      engine.rerender();
+    });
+  });
+  document.getElementById('giggleStartBtn').addEventListener('click', function() {
+    if (stageState.timerActive) return;
+    stageState.timerActive = true;
+    this.disabled = true;
+    this.textContent = 'Whispering…';
+    engine.startTimer(document.getElementById('stageTimerEl'), 60, () => {
+      stageState.timerActive = false;
+      stageState.sessions++;
+      engine.rerender();
+    });
+  });
+}
+
+function renderSoftOnset(el, stage) {
+  const cfg = stage.config;
+  if (stageState.phase == null) stageState.phase = 0;
+  if (stageState.itemIdx == null) stageState.itemIdx = 0;
+
+  const PHASES = [
+    { type: 'intro' },
+    { type: 'vowels', items: ['/h/…ah/','/h/…oh/','/h/…ee/','/h/…ay/','/h/…or/','/h/…oo/'], label: 'Whispered /h/ + vowels', sub: 'Whisper /h/ then let the vowel flow out without a break. Breath flows continuously. No voice yet.' },
+    { type: 'vowels', items: ['/h/…ah/','/h/…oh/','/h/…ee/','/h/…ay/','/h/…or/','/h/…oo/'], label: 'Voiced /h/ + vowels', sub: 'Whisper the /h/, then let the vowel ring out on your target note. No gap, no push.', pitched: true },
+    { type: 'words', items: SOFT_ONSET_H_WORDS, label: '/h/ onset — single words', sub: 'Whispered. Let the /h/ carry you gently onto each word.' },
+    { type: 'words', items: SOFT_ONSET_H_SHORT.concat(SOFT_ONSET_H_LONG), label: '/h/ onset — phrases', sub: 'Whispered then chanted on one note. Soft and effortless throughout.' },
+    { type: 'words', items: SOFT_ONSET_V_WORDS, label: 'Vowel onset — single words', sub: 'Think the /h/ but do not produce it. Creep softly onto the vowel. Chanting on your target note.', pitched: true },
+    { type: 'words', items: SOFT_ONSET_V_SHORT.concat(SOFT_ONSET_V_LONG), label: 'Vowel onset — phrases', sub: 'Chanting on one note. Voice begins gently — no hard push.', pitched: true },
+  ];
+
+  const phase = PHASES[stageState.phase];
+  const totalPhases = PHASES.length;
+  const isLastPhase = stageState.phase >= totalPhases - 1;
+
+  if (phase.pitched) engine.setTarget(getBaseNote('F3'));
+  else engine.clearFeedback();
+  graphCenterFreq = phase.pitched ? NOTE_FREQ_MAP[getBaseNote('F3')] : null;
+
+  let innerHtml = '';
+  if (phase.type === 'intro') {
+    innerHtml = `
+      <div class="stage-desc">${cfg.instruction}</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin:12px 0;font-size:14px;line-height:1.9;color:var(--text2)">
+        • Inhale slowly through your nose, mouth gently closed<br>
+        • Exhale and sustain a voiceless /h/ sound — wide open mouth, relaxed jaw<br>
+        • Gradually join vowels to the /h/ without a break<br>
+        • A hard glottal attack adds weight to the voice — soft onset removes it<br>
+        • Gradually reduce the length of /h/ and increase the vowel sound
+      </div>
+      <div class="controls controls-center">
+        <button id="btNext" class="primary">Start Exercise</button>
+      </div>`;
+  } else if (phase.type === 'vowels') {
+    const item = phase.items[stageState.itemIdx];
+    innerHtml = `
+      <div style="font-size:14px;font-weight:600;color:var(--text);text-align:center;margin-bottom:2px">${phase.label}</div>
+      <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:10px">${phase.sub}</div>
+      <div class="chant-item">${item}</div>
+      <div class="substep-dots" id="itemDots"></div>
+      <div class="controls controls-center">
+        <button id="btNext" class="primary">${stageState.itemIdx >= phase.items.length - 1 ? (isLastPhase ? 'Finish' : 'Next Section →') : 'Next'}</button>
+      </div>`;
+  } else {
+    const items = phase.items;
+    const idx = stageState.itemIdx;
+    const start = Math.max(0, idx - 3);
+    const end = Math.min(items.length, idx + 6);
+    innerHtml = `
+      <div style="font-size:14px;font-weight:600;color:var(--text);text-align:center;margin-bottom:2px">${phase.label}</div>
+      <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:10px">${phase.sub}</div>
+      <div class="chant-item" style="font-size:28px">${items[idx]}</div>
+      <div class="exercise-word-list">${items.slice(start,end).map((w,wi)=>{const ai=start+wi;return`<span class="${ai<idx?'done':(ai===idx?'current':'')}">${w}</span>`;}).join('')}</div>
+      <div class="controls controls-center">
+        <button id="btPrev" class="sm" ${idx<=0?'disabled':''}>Prev</button>
+        <button id="btNext" class="primary">${idx>=items.length-1?(isLastPhase?'Finish':'Next Section →'):'Next'}</button>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="substep-dots" id="phaseDots"></div>
+    ${innerHtml}
+  `;
+
+  document.getElementById('phaseDots').innerHTML = PHASES.map((_,i) =>
+    `<div class="substep-dot ${i < stageState.phase ? 'done' : (i===stageState.phase?'active':'')}"></div>`
+  ).join('');
+
+  if (phase.type === 'vowels') {
+    document.getElementById('itemDots').innerHTML = phase.items.map((_,i)=>
+      `<div class="substep-dot ${i<stageState.itemIdx?'done':(i===stageState.itemIdx?'active':'')}"></div>`
+    ).join('');
+  }
+
+  document.getElementById('btPrev')?.addEventListener('click', () => {
+    stageState.itemIdx = Math.max(0, stageState.itemIdx - 1);
+    engine.rerender();
+  });
+
+  document.getElementById('btNext')?.addEventListener('click', () => {
+    const ph = PHASES[stageState.phase];
+    const items = ph.type === 'intro' ? [] : ph.items;
+    if (ph.type !== 'intro' && stageState.itemIdx < items.length - 1) {
+      stageState.itemIdx++;
+      engine.rerender();
+    } else {
+      stageState.phase++;
+      stageState.itemIdx = 0;
+      if (stageState.phase >= totalPhases) { stageState.phase = 0; engine.complete(); }
+      else engine.rerender();
+    }
+  });
+}
+
+function renderChanting(el, stage) {
+  const cfg = stage.config;
+  engine.setTarget(getBaseNote('F3'));
+  graphCenterFreq = NOTE_FREQ_MAP[getBaseNote('F3')];
+  if (stageState.phase == null) stageState.phase = 0;
+  if (stageState.itemIdx == null) stageState.itemIdx = 0;
+
+  const PHASES = [
+    { items: CHANTING_M_VOWELS, label: '/m/ + vowels', sub: 'Lips loosely closed. Feel vibration building in your lips and face.' },
+    { items: CHANTING_N_VOWELS, label: '/n/ + vowels', sub: 'Tip of tongue resting on the ridge behind upper teeth.' },
+    { items: CHANTING_NG_VOWELS, label: '/ng/ + vowels', sub: 'Back of tongue to soft palate — like the end of "singing".' },
+    { items: CHANTING_M_WORDS, label: '/m/ onset — single words', sub: 'Chanting on one note. Each syllable the same length.' },
+    { items: CHANTING_M_SHORT, label: '/m/ onset — short phrases', sub: 'Chanting on one note. Keep forward resonance throughout.' },
+    { items: CHANTING_M_LONG, label: '/m/ onset — longer phrases', sub: 'Chanting on one note. Sustain the resonance all the way through.' },
+    { items: CHANTING_N_WORDS, label: '/n/ onset — single words', sub: 'Chanting on one note. Each syllable the same length.' },
+    { items: CHANTING_N_SHORT, label: '/n/ onset — short phrases', sub: 'Chanting on one note. Forward nasal resonance throughout.' },
+  ];
+
+  const phase = PHASES[stageState.phase];
+  const totalPhases = PHASES.length;
+  const isLastPhase = stageState.phase >= totalPhases - 1;
+  const idx = stageState.itemIdx;
+  const items = phase.items;
+  const isVowelPhase = stageState.phase < 3;
+  const baseNote = getBaseNote('F3');
+
+  const start = Math.max(0, idx - 2);
+  const end = Math.min(items.length, idx + 5);
+  const wordListHtml = isVowelPhase
+    ? `<div class="substep-dots" id="itemDots"></div>`
+    : `<div class="exercise-word-list">${items.slice(start,end).map((w,wi)=>{const ai=start+wi;return`<span class="${ai<idx?'done':(ai===idx?'current':'')}">${w}</span>`;}).join('')}</div>`;
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div class="substep-dots" id="phaseDots"></div>
+    <div style="font-size:14px;font-weight:600;color:var(--text);text-align:center;margin-bottom:2px">${phase.label}</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px">${phase.sub}</div>
+    <div class="chant-item" style="${isVowelPhase?'':'font-size:28px'}">${items[idx]}</div>
+    ${wordListHtml}
+    <div class="controls controls-center">
+      <button id="stageRefBtn">Hold for ${baseNote}</button>
+      ${idx > 0 ? `<button id="btPrev" class="sm">Prev</button>` : ''}
+      <button id="btNext" class="primary">${idx>=items.length-1?(isLastPhase?'Finish':'Next Section →'):'Next'}</button>
+    </div>
+  `;
+
+  document.getElementById('phaseDots').innerHTML = PHASES.map((_,i)=>
+    `<div class="substep-dot ${i<stageState.phase?'done':(i===stageState.phase?'active':'')}"></div>`
+  ).join('');
+
+  if (isVowelPhase) {
+    document.getElementById('itemDots').innerHTML = items.map((_,i)=>
+      `<div class="substep-dot ${i<idx?'done':(i===idx?'active':'')}"></div>`
+    ).join('');
+  }
+
+  engine.bindHoldRef('stageRefBtn', baseNote);
+
+  document.getElementById('btPrev')?.addEventListener('click', () => {
+    stageState.itemIdx = Math.max(0, stageState.itemIdx - 1);
+    engine.rerender();
+  });
+  document.getElementById('btNext').addEventListener('click', () => {
+    if (stageState.itemIdx < items.length - 1) {
+      stageState.itemIdx++;
+      engine.rerender();
+    } else {
+      stageState.phase++;
+      stageState.itemIdx = 0;
+      if (stageState.phase >= totalPhases) { stageState.phase = 0; engine.complete(); }
+      else engine.rerender();
+    }
+  });
+}
+
+function renderLarynxElevation(el, stage) {
+  const cfg = stage.config;
+  if (stageState.step == null) stageState.step = 0;
+
+  const STEPS = [
+    { title: 'Feel the Swallow', body: 'Place your fingers <em>lightly</em> on your throat just above the Adam\'s apple. Swallow gently and feel the larynx rise, then descend. Repeat several times until you can clearly feel this movement.', btn: 'I can feel it — Next' },
+    { title: 'Delay the Descent', body: 'Swallow again. This time, try to delay the larynx returning downward. Try to sense — from <em>inside</em>, not with your fingers — the muscles holding it up. Repeat several times.', btn: 'Ready — Next' },
+    { title: 'Conscious Elevation', body: 'Without swallowing, try to gently pull your Adam\'s apple <strong>upward and backward</strong>. This may feel very subtle at first. Gargling is excellent for strengthening these muscles — it contracts them far longer than swallowing does.', btn: 'Ready — Practise humming' },
+    { title: 'Hum While Elevated', body: 'Try to maintain a gently elevated larynx position while humming /m/ on your base note. The pitch graph shows your note. Sustain for 30 seconds.', timed: true, duration: 30 },
+    { title: 'Stage Complete', body: 'As these muscles strengthen through regular practice, a more elevated resting larynx position will become natural — making higher pitch and forward resonance progressively easier to sustain.', btn: 'Finish' },
+  ];
+
+  const s = STEPS[stageState.step];
+  const baseNote = getBaseNote('F3');
+
+  if (s.timed) { engine.setTarget(baseNote); graphCenterFreq = NOTE_FREQ_MAP[baseNote]; }
+  else engine.clearFeedback();
+
+  const controls = s.timed ? `
+    <div class="stage-timer" id="stageTimerEl">${s.duration}.0</div>
+    <div class="controls controls-center">
+      <button id="stageRefBtn">Hold for ${baseNote}</button>
+      <button id="btStartTimer" class="primary" ${stageState.timerActive?'disabled':''}>${stageState.timerActive?'Humming…':`Start ${s.duration}s Timer`}</button>
+    </div>` : `
+    <div class="controls controls-center">
+      <button id="btNext" class="primary">${s.btn || 'Next'}</button>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="stage-title">${stage.name}</div>
+    <div class="stage-desc">${cfg.instruction}</div>
+    <div class="substep-dots" id="stepDots"></div>
+    <div class="larynx-step-card">
+      <h3>${s.title}</h3>
+      <p>${s.body}</p>
+    </div>
+    ${controls}
+  `;
+
+  document.getElementById('stepDots').innerHTML = STEPS.map((_,i)=>
+    `<div class="substep-dot ${i<stageState.step?'done':(i===stageState.step?'active':'')}"></div>`
+  ).join('');
+
+  const advance = () => {
+    stageState.timerActive = false;
+    stageState.step++;
+    if (stageState.step >= STEPS.length) { stageState.step = 0; engine.complete(); }
+    else engine.rerender();
+  };
+
+  document.getElementById('btNext')?.addEventListener('click', advance);
+  if (s.timed) {
+    engine.bindHoldRef('stageRefBtn', baseNote);
+    document.getElementById('btStartTimer')?.addEventListener('click', function() {
+      if (stageState.timerActive) return;
+      stageState.timerActive = true;
+      this.disabled = true;
+      this.textContent = 'Humming…';
+      engine.startTimer(document.getElementById('stageTimerEl'), s.duration, advance);
+    });
+  }
+}
+
 // ─── STAGE TYPE REGISTRY ────────────────────────────────────────────
 const STAGE_TYPES = {
   'sustained-tone': renderSustainedTone,
@@ -2150,7 +2920,14 @@ const STAGE_TYPES = {
   'read-aloud': renderReadAloud,
   'resonance': renderResonanceType,
   'free-talk': renderFreeTalk,
+  'intonation': renderIntonation,
+  'breath-sustain': renderBreathSustain,
   'timed-hold': renderTimedHold,
+  'breath-training': renderBreathTraining,
+  'giggle': renderGiggle,
+  'soft-onset': renderSoftOnset,
+  'chanting': renderChanting,
+  'larynx-elevation': renderLarynxElevation,
 };
 
 // ─── UI RENDERING ────────────────────────────────────────────────────
@@ -2179,10 +2956,13 @@ async function setStage(n) {
     }
   }
   engine.clearTimer();
+  clearTimeout(autoAdvTimer); autoAdvTimer = null;
   stopReference();
   feedbackState = 'off';
   zoneFeedback = 'off';
   stopAlertTone(); beepOffSince = null; beepOnSince = null;
+  stageState.timerActive = false;
+  stageState.running = false;
   stageStates[currentStage] = stageState;
   stageState = stageStates[n] || {};
   currentStage = n;
@@ -2340,6 +3120,11 @@ function mainLoop() {
           centsClass = 'note-cents ' + (centsOff > 0 ? 'sharp' : 'flat');
           nameColor = state === 'close' ? 'var(--warning)' : 'var(--danger)';
         }
+        if (stageState.timerActive && ROUTINE.stages[currentStage]?.type === 'sustained-tone') {
+          stageState.pitchFrames = (stageState.pitchFrames || 0) + 1;
+          if (state === 'on') stageState.onFrames = (stageState.onFrames || 0) + 1;
+          if (stageState.pitchValues) stageState.pitchValues.push(Math.abs(centsOff));
+        }
       } else if (graphZone) {
         // Zone feedback (blend, sentences, free practice)
         const zState = classifyZone(freq, NOTE_FREQ_MAP[graphZone.low], NOTE_FREQ_MAP[graphZone.high]);
@@ -2369,6 +3154,22 @@ function mainLoop() {
   }
 
   tickBeepAlert(freq, zoneFeedback);
+
+  // Breath sustain tracking
+  if (stageState.running && ROUTINE.stages[currentStage]?.type === 'breath-sustain') {
+    const now = performance.now();
+    const isVoiced = freq && freq > 80 && freq < 1200; // any voiced pitch, not noise
+    if (isVoiced) {
+      if (!stageState.holdStart) stageState.holdStart = now;
+      stageState.silenceStart = null;
+      stageState.holdMs = now - stageState.holdStart;
+      const timerEl = document.getElementById('breathTimerEl');
+      if (timerEl) timerEl.textContent = (stageState.holdMs / 1000).toFixed(1);
+    } else if (stageState.holdStart) {
+      if (!stageState.silenceStart) stageState.silenceStart = now;
+      if (now - stageState.silenceStart > 2500) endBreathAttempt();
+    }
+  }
 
   // Write to unified buffer at fixed slot rate
   if (uniTimes && spectroFreqData) {
@@ -2420,9 +3221,10 @@ async function tryStartSession() {
 
   // Pre-configure warm-up from the splash target note + femme-only flag
   sessionFemmeOnly = document.getElementById('splashFemmeOnly').checked;
+  sessionBaseNote = document.getElementById('splashBaseNote').value || null;
   const splashTarget = document.getElementById('splashTargetNote').value;
   if (splashTarget) {
-    const derived = deriveWarmupNotes(splashTarget, 6, sessionFemmeOnly);
+    const derived = deriveWarmupNotes(splashTarget, 6, sessionFemmeOnly, sessionBaseNote);
     if (derived) {
       // stageState IS the live state for stage 0 (already current); update it directly
       stageState.derivedNotes = derived;
@@ -2720,7 +3522,7 @@ async function tryStartSession() {
     if (ROUTINE.stages[currentStage].type === 'sustained-tone') {
       const highNote = graphZone ? graphZone.high : (targetNoteKey || null);
       if (highNote) {
-        const derived = deriveWarmupNotes(highNote, 6, sessionFemmeOnly);
+        const derived = deriveWarmupNotes(highNote, 6, sessionFemmeOnly, sessionBaseNote);
         if (derived) {
           engine.clearTimer();
           stageState.timerActive = false;
@@ -2850,6 +3652,24 @@ document.getElementById('nextBtn').addEventListener('click', () => {
 });
 
 // ─── SESSION SUMMARY MODAL ────────────────────────────────────────────
+function saveSessionRecord(allStates) {
+  const warmupAcc = allStates[0]?.noteAccuracy || [];
+  const record = {
+    date: new Date().toISOString(),
+    duration: sessionStartTime ? Math.floor((Date.now() - sessionStartTime) / 1000) : 0,
+    stagesCompleted: stagesCompleted.size,
+    totalStages: ROUTINE.stages.length,
+    warmupNotes: warmupAcc.map(r => r?.note || ''),
+    warmupPct: warmupAcc.map(r => r?.pct ?? null),
+    version: '2.0.0'
+  };
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('vt-history') || '[]'); } catch (e) {}
+  history.unshift(record);
+  if (history.length > 30) history.length = 30;
+  try { localStorage.setItem('vt-history', JSON.stringify(history)); } catch (e) {}
+}
+
 function showSessionSummary() {
   const overlay = document.getElementById('sessionSummaryOverlay');
   document.getElementById('summaryDuration').textContent =
@@ -2868,6 +3688,24 @@ function showSessionSummary() {
     ? `<div style="font-size:13px;color:var(--text2);">You saved <b style="color:var(--text);">${recCount}</b> exercise recording${recCount === 1 ? '' : 's'}. Switch back to individual stages to play them.</div>`
     : '';
 
+  // Warm-up accuracy breakdown
+  const warmupAcc = allStates[0]?.noteAccuracy?.filter(Boolean);
+  const existingTable = document.getElementById('summaryNoteTable');
+  if (existingTable) existingTable.remove();
+  if (warmupAcc && warmupAcc.length > 0) {
+    const tableDiv = document.createElement('div');
+    tableDiv.id = 'summaryNoteTable';
+    tableDiv.className = 'summary-note-table';
+    tableDiv.innerHTML = `
+      <div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Warm-up accuracy</div>
+      <table><tbody>${warmupAcc.map(r => `<tr>
+        <td>${r.note}</td>
+        <td>${r.pct}%</td>
+        <td>${r.stabilityLabel}</td>
+      </tr>`).join('')}</tbody></table>`;
+    recEl.after(tableDiv);
+  }
+
   // Session recording download (if active recording)
   const dl = document.getElementById('sessionDownload');
   const summaryDl = document.getElementById('summaryDownloadBtn');
@@ -2878,6 +3716,7 @@ function showSessionSummary() {
     summaryDl.style.display = 'none';
   }
 
+  saveSessionRecord(allStates);
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('summaryCloseBtn').focus(), 0);
 }
@@ -2898,7 +3737,7 @@ document.getElementById('summaryRestartBtn').addEventListener('click', () => {
   sessionStartTime = Date.now();
   // Re-apply warm-up target from session start
   if (sessionTargetNote) {
-    const derived = deriveWarmupNotes(sessionTargetNote, 6, sessionFemmeOnly);
+    const derived = deriveWarmupNotes(sessionTargetNote, 6, sessionFemmeOnly, sessionBaseNote);
     if (derived) {
       stageState.derivedNotes = derived;
       stageStates[0] = stageState;
@@ -2908,6 +3747,39 @@ document.getElementById('summaryRestartBtn').addEventListener('click', () => {
   renderCurrentStage();
   updateNavButtons();
 });
+
+// ─── SESSION HISTORY MODAL ───────────────────────────────────────────
+function showHistory() {
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('vt-history') || '[]'); } catch (e) {}
+  const body = document.getElementById('historyBody');
+  if (!history.length) {
+    body.innerHTML = '<p style="text-align:center;color:var(--text2);padding:24px 0">No sessions recorded yet. Complete a session to start tracking progress.</p>';
+  } else {
+    body.innerHTML = `<table class="history-table">
+      <thead><tr><th>Date</th><th>Duration</th><th>Stages</th><th>Avg warm-up</th></tr></thead>
+      <tbody>${history.map(r => {
+        const mins = Math.floor(r.duration / 60), secs = r.duration % 60;
+        const pcts = (r.warmupPct || []).filter(p => p !== null);
+        const avgPct = pcts.length ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) + '%' : '—';
+        const d = new Date(r.date);
+        const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+          + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        return `<tr><td>${dateStr}</td><td>${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</td><td>${r.stagesCompleted}/${r.totalStages}</td><td>${avgPct}</td></tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+  document.getElementById('historyOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('historyCloseBtn').focus(), 0);
+}
+function hideHistory() {
+  document.getElementById('historyOverlay').classList.remove('open');
+}
+document.getElementById('historyCloseBtn').addEventListener('click', hideHistory);
+document.getElementById('historyOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) hideHistory();
+});
+document.getElementById('historyBtn').addEventListener('click', showHistory);
 
 // Session recording
 document.getElementById('sessionRecBtn').addEventListener('click', async () => {
@@ -2964,6 +3836,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-<div class="app-footer">v1.6.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
+<div class="app-footer">v2.0.0 &copy; Aida Paul &lt;<a href="mailto:aida.paul@proton.me">aida.paul@proton.me</a>&gt; &mdash; BSD License</div>
 </body>
 </html>
