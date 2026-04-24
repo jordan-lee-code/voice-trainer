@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Training Wizard</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2129;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --accent: #58a6ff;
+  --danger: #f85149;
+  --success: #3fb950;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  padding: 40px 20px 60px;
+}
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+h2 { font-size: 15px; font-weight: 600; color: var(--text2); text-transform: uppercase;
+     letter-spacing: .06em; margin-bottom: 14px; }
+.subtitle { color: var(--text2); margin-bottom: 8px; line-height: 1.5; text-align: center; max-width: 520px; }
+.back-link { color: var(--text2); font-size: 13px; margin-bottom: 32px; }
+.back-link a { color: var(--accent); text-decoration: none; }
+.back-link a:hover { text-decoration: underline; }
+
+.container { width: 100%; max-width: 680px; }
+.section { margin-bottom: 32px; }
+
+label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+label .optional { font-weight: 400; color: var(--text2); }
+input[type=text], input[type=number], textarea, select {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 10px; font-size: 14px; font-family: inherit;
+  transition: border-color .15s;
+}
+input[type=text], input[type=number] { width: 100%; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+textarea { width: 100%; resize: vertical; line-height: 1.5; }
+select { cursor: pointer; }
+
+.field { margin-bottom: 16px; }
+.field .hint { font-size: 12px; color: var(--text2); margin-top: 4px; line-height: 1.4; }
+
+button {
+  font-family: inherit; cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text);
+  padding: 8px 16px; border-radius: 6px; font-size: 14px; transition: all .15s;
+}
+button:hover { background: var(--border); }
+button:active { transform: scale(0.97); }
+button.primary {
+  background: var(--accent); color: #000; border-color: var(--accent);
+  font-weight: 600; font-size: 16px; padding: 12px 24px; width: 100%; margin-top: 8px;
+}
+button.primary:hover { opacity: .85; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Stage cards */
+.stage-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  border-left: 3px solid var(--border); margin-bottom: 10px;
+  transition: border-color .15s, opacity .15s;
+}
+.stage-card.enabled { border-left-color: var(--accent); }
+.stage-card-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; cursor: pointer; user-select: none;
+}
+.stage-card-header input[type=checkbox] {
+  width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
+}
+.stage-card-header .stage-title { font-size: 15px; font-weight: 600; flex: 1; }
+.stage-card-header .stage-type { font-size: 11px; color: var(--text2); font-family: monospace; }
+.stage-card-body {
+  display: none; padding: 0 16px 16px; border-top: 1px solid var(--border);
+}
+.stage-card.enabled .stage-card-body { display: block; }
+
+.cfg-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
+.cfg-col { display: flex; flex-direction: column; gap: 4px; }
+.cfg-col label { margin-bottom: 0; font-size: 13px; }
+.cfg-col select { min-width: 80px; }
+.cfg-col input[type=number] { width: 80px; }
+
+.step-opts { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.step-opts label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 400; cursor: pointer; }
+.step-opts input[type=radio] { accent-color: var(--accent); }
+
+.inline-check { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.inline-check input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
+.inline-check label { font-size: 13px; font-weight: 400; margin-bottom: 0; cursor: pointer; }
+
+.cfg-body label { font-size: 13px; margin-bottom: 4px; }
+
+/* Status / preview */
+#status {
+  margin-top: 16px; padding: 12px 16px;
+  border-radius: 6px; font-size: 14px; line-height: 1.5; display: none;
+}
+#status.loading { display: block; background: var(--surface); border: 1px solid var(--border); color: var(--text2); }
+#status.error   { display: block; background: #1a0f0f; border: 1px solid var(--danger); color: var(--danger); }
+#status.success { display: block; background: #0f1a0f; border: 1px solid var(--success); color: var(--success); }
+.spinner {
+  display: inline-block; width: 13px; height: 13px;
+  border: 2px solid var(--text2); border-top-color: transparent;
+  border-radius: 50%; animation: spin .6s linear infinite;
+  vertical-align: middle; margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#preview {
+  display: none; margin-top: 20px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: 14px 18px;
+}
+#preview h3 { font-size: 15px; margin-bottom: 4px; }
+#preview .desc { font-size: 13px; color: var(--text2); margin-bottom: 10px; }
+#preview ol { padding-left: 20px; }
+#preview li { margin-bottom: 3px; font-size: 13px; }
+#preview li span { color: var(--text2); font-size: 11px; margin-left: 6px; font-family: monospace; }
+
+#fallbackUpload { display: none; margin-top: 12px; font-size: 13px; color: var(--text2); }
+#fallbackUpload a { color: var(--accent); cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>Lesson Wizard</h1>
+<p class="subtitle">Build a custom voice training lesson — no API key required.</p>
+<p class="back-link"><a href="generator.html">← AI generator</a></p>
+
+<div class="container">
+
+  <section class="section">
+    <h2>Session details</h2>
+    <div class="field">
+      <label for="clientName">Client name</label>
+      <input type="text" id="clientName" placeholder="e.g. Alex">
+    </div>
+    <div class="field">
+      <label for="routineName">Routine name</label>
+      <input type="text" id="routineName" placeholder="e.g. Feminisation — week 3" value="Voice Training">
+    </div>
+    <div class="field">
+      <label for="routineDesc">Description <span class="optional">(optional)</span></label>
+      <input type="text" id="routineDesc" placeholder="Shown on the splash screen">
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Exercises</h2>
+    <p class="hint" style="margin-bottom:16px">Tick each exercise to include it. Stages appear in this order.</p>
+    <div id="stages"></div>
+  </section>
+
+  <div id="status"></div>
+
+  <div id="fallbackUpload">
+    Could not fetch index.html automatically.
+    <label>Upload it: <input type="file" id="fileInput" accept=".html"></label>
+  </div>
+
+  <div id="preview">
+    <h3 id="previewTitle"></h3>
+    <div class="desc" id="previewDesc"></div>
+    <ol id="previewList"></ol>
+  </div>
+
+  <button id="generateBtn" class="primary" style="margin-top:24px">Generate &amp; Download</button>
+</div>
+
+<script>
+const ALL_NOTES = [
+  'C2','C#2','D2','D#2','E2','F2','F#2','G2','G#2','A2','A#2','B2',
+  'C3','C#3','D3','D#3','E3','F3','F#3','G3','G#3','A3','A#3','B3',
+  'C4','C#4','D4','D#4','E4','F4','F#4','G4','G#4','A4','A#4','B4',
+  'C5','C#5','D5','D#5','E5'
+];
+
+function noteOpts(selected) {
+  return ALL_NOTES.map(n =>
+    `<option value="${n}"${n === selected ? ' selected' : ''}>${n}</option>`
+  ).join('');
+}
+
+function noteRangeHtml(pfx, defaultLow, defaultHigh) {
+  return `
+    <div class="cfg-row">
+      <div class="cfg-col">
+        <label>Low note</label>
+        <select id="${pfx}-low">${noteOpts(defaultLow)}</select>
+      </div>
+      <div class="cfg-col" style="padding-bottom:8px;color:var(--text2);font-size:13px">to</div>
+      <div class="cfg-col">
+        <label>High note</label>
+        <select id="${pfx}-high">${noteOpts(defaultHigh)}</select>
+      </div>
+      <div class="cfg-col">
+        <label>Step</label>
+        <div class="step-opts">
+          <label><input type="radio" name="${pfx}-step" value="whole" checked> whole-tone</label>
+          <label><input type="radio" name="${pfx}-step" value="semi"> semitone</label>
+        </div>
+      </div>
+    </div>`;
+}
+
+function instrHtml(pfx, defaultText, rows = 2) {
+  return `
+    <div class="field">
+      <label>Instruction</label>
+      <textarea id="${pfx}-instr" rows="${rows}">${defaultText}</textarea>
+    </div>`;
+}
+
+// ─── Stage card definitions ───────────────────────────────────────────────────
+
+const STAGE_DEFS = [
+  {
+    id: 'warmup',
+    label: 'Warm-up',
+    typeLabel: 'sustained-tone',
+    defaultEnabled: true,
+    html() {
+      return `
+        ${noteRangeHtml('wm', 'C3', 'A#3')}
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Duration (seconds)</label>
+            <input type="number" id="wm-dur" value="10" min="1" max="120">
+          </div>
+        </div>
+        <div class="inline-check">
+          <input type="checkbox" id="wm-ref" checked>
+          <label for="wm-ref">Show reference tone button</label>
+        </div>
+        ${instrHtml('wm', 'Sing "ahh" on each note. Match the target pitch shown on the graph.')}`;
+    },
+    toStage(num) {
+      const notes = buildNoteRange(val('wm-low'), val('wm-high'), radio('wm-step'));
+      return {
+        id: 'warmup', name: `${num}. Warm-up`, short: 'Warm-up',
+        type: 'sustained-tone',
+        config: {
+          notes,
+          duration: +val('wm-dur'),
+          instruction: val('wm-instr'),
+          showReference: chk('wm-ref')
+        }
+      };
+    }
+  },
+
+  {
+    id: 'counting',
+    label: 'Counting / Numbers',
+    typeLabel: 'repeat-on-note',
+    defaultEnabled: false,
+    html() {
+      return `
+        ${noteRangeHtml('ct', 'F3', 'G#3')}
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Reps per note</label>
+            <input type="number" id="ct-reps" value="2" min="1" max="10">
+          </div>
+        </div>
+        <div class="inline-check">
+          <input type="checkbox" id="ct-ref" checked>
+          <label for="ct-ref">Show reference tone button</label>
+        </div>
+        ${instrHtml('ct', 'Count 1 through 5 with soft vocal weight on the target note.')}`;
+    },
+    toStage(num) {
+      const notes = buildNoteRange(val('ct-low'), val('ct-high'), radio('ct-step'));
+      return {
+        id: 'counting', name: `${num}. Counting`, short: 'Counting',
+        type: 'repeat-on-note',
+        config: {
+          notes,
+          reps: +val('ct-reps'),
+          display: '1 &nbsp; 2 &nbsp; 3 &nbsp; 4 &nbsp; 5',
+          instruction: val('ct-instr'),
+          showReference: chk('ct-ref')
+        }
+      };
+    }
+  },
+
+  {
+    id: 'breath',
+    label: 'Breath Hold',
+    typeLabel: 'timed-hold',
+    defaultEnabled: false,
+    html() {
+      return `
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Duration (seconds)</label>
+            <input type="number" id="bh-dur" value="30" min="5" max="120">
+          </div>
+          <div class="cfg-col">
+            <label>Target note <span class="optional">(optional)</span></label>
+            <select id="bh-note">
+              <option value="">None</option>
+              ${noteOpts('F3')}
+            </select>
+          </div>
+        </div>
+        ${instrHtml('bh', 'Exhale slowly on a sustained /s/ sound. Aim for an even, controlled release. Keep ribs wide — no shoulder movement.')}`;
+    },
+    toStage(num) {
+      const noteVal = val('bh-note');
+      const cfg = { duration: +val('bh-dur'), instruction: val('bh-instr') };
+      if (noteVal) cfg.note = noteVal;
+      return {
+        id: 'breath-hold', name: `${num}. Breath Hold`, short: 'Breath',
+        type: 'timed-hold', config: cfg
+      };
+    }
+  },
+
+  {
+    id: 'onset',
+    label: 'Soft Onset (initiation)',
+    typeLabel: 'timed-hold',
+    defaultEnabled: false,
+    html() {
+      return `
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Duration (seconds)</label>
+            <input type="number" id="on-dur" value="60" min="10" max="300">
+          </div>
+          <div class="cfg-col">
+            <label>Target note</label>
+            <select id="on-note">${noteOpts('F3')}</select>
+          </div>
+        </div>
+        <div class="inline-check">
+          <input type="checkbox" id="on-ref" checked>
+          <label for="on-ref">Show reference tone button</label>
+        </div>
+        ${instrHtml('on', 'Begin each sound with a gentle ‘h’ before the vowel (hah, hee, hoh). Aim for breathy, zero-tension onset. Progress: single vowels → words → short phrases.', 3)}`;
+    },
+    toStage(num) {
+      return {
+        id: 'soft-onset', name: `${num}. Soft Onset`, short: 'Onset',
+        type: 'timed-hold',
+        config: {
+          duration: +val('on-dur'),
+          note: val('on-note'),
+          instruction: val('on-instr'),
+          showReference: chk('on-ref')
+        }
+      };
+    }
+  },
+
+  {
+    id: 'giggle',
+    label: 'Giggle / Voicecraft',
+    typeLabel: 'repeat-on-note',
+    defaultEnabled: false,
+    html() {
+      return `
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Target note</label>
+            <select id="gg-note">${noteOpts('F3')}</select>
+          </div>
+          <div class="cfg-col">
+            <label>Group count</label>
+            <div class="step-opts">
+              <label><input type="radio" name="gg-count" value="3"> 3</label>
+              <label><input type="radio" name="gg-count" value="5" checked> 5</label>
+              <label><input type="radio" name="gg-count" value="7"> 7</label>
+            </div>
+          </div>
+          <div class="cfg-col">
+            <label>Repetitions</label>
+            <input type="number" id="gg-reps" value="5" min="1" max="20">
+          </div>
+        </div>
+        ${instrHtml('gg', "Repeat ‘Hee Hee Hee’ in your chosen group count. Spoken first, then whispered. Place two fingers lightly on your throat — feel vibration when spoken, silence when whispered.", 3)}`;
+    },
+    toStage(num) {
+      const count = radio('gg-count') || '5';
+      const hees = Array(+count).fill('Hee').join(' ');
+      return {
+        id: 'giggle', name: `${num}. Giggle`, short: 'Giggle',
+        type: 'repeat-on-note',
+        config: {
+          notes: [val('gg-note')],
+          reps: +val('gg-reps'),
+          display: hees,
+          instruction: val('gg-instr'),
+          showReference: false
+        }
+      };
+    }
+  },
+
+  {
+    id: 'humming',
+    label: 'Humming / Chanting (RVT)',
+    typeLabel: 'repeat-on-note',
+    defaultEnabled: false,
+    html() {
+      return `
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Consonant</label>
+            <div class="step-opts">
+              <label><input type="radio" name="hc-cons" value="m" checked> /m/</label>
+              <label><input type="radio" name="hc-cons" value="n"> /n/</label>
+              <label><input type="radio" name="hc-cons" value="ng"> /ng/</label>
+            </div>
+          </div>
+          <div class="cfg-col">
+            <label>Target note</label>
+            <select id="hc-note">${noteOpts('F3')}</select>
+          </div>
+          <div class="cfg-col">
+            <label>Reps</label>
+            <input type="number" id="hc-reps" value="3" min="1" max="10">
+          </div>
+        </div>
+        <div class="inline-check">
+          <input type="checkbox" id="hc-ref" checked>
+          <label for="hc-ref">Show reference tone button</label>
+        </div>
+        ${instrHtml('hc', 'Chant each sound on the target note in one breath. Keep lips loosely together — feel the vibration in your lips and face, not your throat. Hold the nasal consonant, then open smoothly to the vowel (e.g. "mmm...ah"). Stay on the same note throughout.', 3)}`;
+    },
+    toStage(num) {
+      const cons = radio('hc-cons') || 'm';
+      const display = ['ah','oh','ee','or','ay','oo'].map(v => `/${cons}…${v}/`).join(' &nbsp; ');
+      return {
+        id: 'humming', name: `${num}. Humming / Chanting`, short: 'Hum',
+        type: 'repeat-on-note',
+        config: {
+          notes: [val('hc-note')],
+          reps: +val('hc-reps'),
+          display,
+          instruction: val('hc-instr'),
+          showReference: chk('hc-ref')
+        }
+      };
+    }
+  },
+
+  {
+    id: 'blend-up',
+    label: 'Blend Upward',
+    typeLabel: 'glide',
+    defaultEnabled: false,
+    html() {
+      return `
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Start note</label>
+            <select id="bu-start">${noteOpts('F3')}</select>
+          </div>
+          <div class="cfg-col">
+            <label>Zone low</label>
+            <select id="bu-zlo">${noteOpts('F3')}</select>
+          </div>
+          <div class="cfg-col" style="padding-bottom:8px;color:var(--text2);font-size:13px">to</div>
+          <div class="cfg-col">
+            <label>Zone high</label>
+            <select id="bu-zhi">${noteOpts('E4')}</select>
+          </div>
+          <div class="cfg-col">
+            <label>Min attempts</label>
+            <input type="number" id="bu-att" value="3" min="1" max="10">
+          </div>
+        </div>
+        ${instrHtml('bu', 'Start on the bottom note in chest voice and glide upward into falsetto. Keep vocal weight consistently light throughout. Record each attempt and listen back.', 3)}`;
+    },
+    toStage(num) {
+      return {
+        id: 'blend-up', name: `${num}. Blend Up`, short: 'Blend Up',
+        type: 'glide',
+        config: {
+          direction: 'up',
+          startNote: val('bu-start'),
+          zone: { low: val('bu-zlo'), high: val('bu-zhi') },
+          referenceNote: val('bu-start'),
+          minAttempts: +val('bu-att'),
+          instruction: val('bu-instr')
+        }
+      };
+    }
+  },
+
+  {
+    id: 'blend-down',
+    label: 'Blend Downward',
+    typeLabel: 'glide',
+    defaultEnabled: false,
+    html() {
+      return `
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Start note</label>
+            <select id="bd-start">${noteOpts('F3')}</select>
+          </div>
+          <div class="cfg-col">
+            <label>Zone low</label>
+            <select id="bd-zlo">${noteOpts('C3')}</select>
+          </div>
+          <div class="cfg-col" style="padding-bottom:8px;color:var(--text2);font-size:13px">to</div>
+          <div class="cfg-col">
+            <label>Zone high</label>
+            <select id="bd-zhi">${noteOpts('F3')}</select>
+          </div>
+          <div class="cfg-col">
+            <label>Min attempts</label>
+            <input type="number" id="bd-att" value="3" min="1" max="10">
+          </div>
+        </div>
+        ${instrHtml('bd', 'Start in falsetto and glide downward into chest voice. Keep vocal weight consistently light with no cracking. Record each attempt and listen back.', 3)}`;
+    },
+    toStage(num) {
+      return {
+        id: 'blend-down', name: `${num}. Blend Down`, short: 'Blend Down',
+        type: 'glide',
+        config: {
+          direction: 'down',
+          startNote: val('bd-start'),
+          zone: { low: val('bd-zlo'), high: val('bd-zhi') },
+          referenceNote: val('bd-start'),
+          minAttempts: +val('bd-att'),
+          instruction: val('bd-instr')
+        }
+      };
+    }
+  },
+
+  {
+    id: 'reading',
+    label: 'Reading Practice',
+    typeLabel: 'read-aloud',
+    defaultEnabled: false,
+    html() {
+      return `
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Zone low</label>
+            <select id="rd-zlo">${noteOpts('F3')}</select>
+          </div>
+          <div class="cfg-col" style="padding-bottom:8px;color:var(--text2);font-size:13px">to</div>
+          <div class="cfg-col">
+            <label>Zone high</label>
+            <select id="rd-zhi">${noteOpts('A#3')}</select>
+          </div>
+        </div>
+        <div class="inline-check">
+          <input type="checkbox" id="rd-builtin" checked onchange="document.getElementById('rd-custom-wrap').style.display=this.checked?'none':'block'">
+          <label for="rd-builtin">Use built-in Harvard sentences</label>
+        </div>
+        <div id="rd-custom-wrap" style="display:none" class="field">
+          <label>Custom sentences <span class="optional">(one per line; blank line = new set)</span></label>
+          <textarea id="rd-custom" rows="6" placeholder="The birch canoe slid on the smooth planks.&#10;Glue the sheet to the dark blue background.&#10;&#10;It's easy to tell the depth of a well.&#10;These days a chicken leg is a rare dish."></textarea>
+        </div>
+        <div class="inline-check">
+          <input type="checkbox" id="rd-rec" checked>
+          <label for="rd-rec">Enable recording</label>
+        </div>
+        ${instrHtml('rd', 'Read each sentence inside the target zone. Aim for soft vocal weight and use the full range available.')}`;
+    },
+    toStage(num) {
+      const useBuiltin = chk('rd-builtin');
+      const stage = {
+        id: 'sentences', name: `${num}. Sentences`, short: 'Sentences',
+        type: 'read-aloud',
+        config: {
+          listsKey: useBuiltin ? 'sentences' : 'customSentences',
+          zone: { low: val('rd-zlo'), high: val('rd-zhi') },
+          instruction: val('rd-instr'),
+          recording: chk('rd-rec')
+        }
+      };
+      if (!useBuiltin) {
+        stage._customKey = 'customSentences';
+        stage._customData = parseCustomSentences(val('rd-custom'));
+      } else {
+        stage._sentencesNull = true;
+      }
+      return stage;
+    }
+  },
+
+  {
+    id: 'resonance',
+    label: 'Resonance / Vowels',
+    typeLabel: 'resonance',
+    defaultEnabled: false,
+    html() {
+      return `
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Target note</label>
+            <select id="rs-note">${noteOpts('F3')}</select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Preamble <span class="optional">(optional — shown before vowel steps)</span></label>
+          <textarea id="rs-preamble" rows="2" placeholder="e.g. First, practice achieving a truly dark yawn…"></textarea>
+        </div>
+        <div class="field">
+          <label>Vowel steps <span class="optional">(one per line: Label: description)</span></label>
+          <textarea id="rs-steps" rows="5">A: as in "pay"
+E: as in "see"
+O: as in "toe"
+OO: as in "through"</textarea>
+        </div>
+        <div class="inline-check">
+          <input type="checkbox" id="rs-ref" checked>
+          <label for="rs-ref">Show reference tone button</label>
+        </div>
+        ${instrHtml('rs', 'On the target note, move through these vowels. Keep lips still — only change the inside of your mouth.')}`;
+    },
+    toStage(num) {
+      const steps = val('rs-steps').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+        const colon = l.indexOf(':');
+        if (colon === -1) return { label: l, description: '' };
+        return { label: l.slice(0, colon).trim(), description: l.slice(colon + 1).trim() };
+      });
+      return {
+        id: 'resonance', name: `${num}. Resonance`, short: 'Resonance',
+        type: 'resonance',
+        config: {
+          note: val('rs-note'),
+          preamble: val('rs-preamble'),
+          instruction: val('rs-instr'),
+          steps: steps.length ? steps : [{ label: 'A', description: '' }],
+          showReference: chk('rs-ref')
+        }
+      };
+    }
+  },
+
+  {
+    id: 'free',
+    label: 'Free Conversation',
+    typeLabel: 'free-talk',
+    defaultEnabled: false,
+    html() {
+      return `
+        <div class="cfg-row">
+          <div class="cfg-col">
+            <label>Zone low</label>
+            <select id="ft-zlo">${noteOpts('F3')}</select>
+          </div>
+          <div class="cfg-col" style="padding-bottom:8px;color:var(--text2);font-size:13px">to</div>
+          <div class="cfg-col">
+            <label>Zone high</label>
+            <select id="ft-zhi">${noteOpts('A#3')}</select>
+          </div>
+        </div>
+        <div class="inline-check">
+          <input type="checkbox" id="ft-builtin" checked onchange="document.getElementById('ft-custom-wrap').style.display=this.checked?'none':'block'">
+          <label for="ft-builtin">Use built-in conversation starters</label>
+        </div>
+        <div id="ft-custom-wrap" style="display:none" class="field">
+          <label>Custom prompts <span class="optional">(one per line)</span></label>
+          <textarea id="ft-custom" rows="5" placeholder="Tell me about something you did this week.&#10;What's a skill you'd like to learn?"></textarea>
+        </div>
+        <div class="inline-check">
+          <input type="checkbox" id="ft-rec" checked>
+          <label for="ft-rec">Enable recording</label>
+        </div>
+        ${instrHtml('ft', 'Put everything together. Answer the conversation starters in your target voice. Stay in the target zone with soft vocal weight.')}`;
+    },
+    toStage(num) {
+      const useBuiltin = chk('ft-builtin');
+      const stage = {
+        id: 'free', name: `${num}. Free Practice`, short: 'Free',
+        type: 'free-talk',
+        config: {
+          promptsKey: useBuiltin ? 'starters' : 'customStarters',
+          zone: { low: val('ft-zlo'), high: val('ft-zhi') },
+          instruction: val('ft-instr'),
+          recording: chk('ft-rec')
+        }
+      };
+      if (!useBuiltin) {
+        stage._customKey = 'customStarters';
+        stage._customData = val('ft-custom').split('\n').map(l => l.trim()).filter(Boolean);
+      } else {
+        stage._startersNull = true;
+      }
+      return stage;
+    }
+  }
+];
+
+// ─── DOM helpers ─────────────────────────────────────────────────────────────
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+function chk(id) {
+  const el = document.getElementById(id);
+  return el ? el.checked : false;
+}
+function radio(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : null;
+}
+
+// ─── Note range builder ───────────────────────────────────────────────────────
+
+function buildNoteRange(low, high, step) {
+  const lo = ALL_NOTES.indexOf(low);
+  const hi = ALL_NOTES.indexOf(high);
+  if (lo === -1 || hi === -1 || lo > hi) return [low];
+  const stride = step === 'semi' ? 1 : 2;
+  const notes = [];
+  for (let i = lo; i <= hi; i += stride) notes.push(ALL_NOTES[i]);
+  return notes;
+}
+
+function parseCustomSentences(raw) {
+  const lists = [];
+  let current = [];
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (current.length) { lists.push(current); current = []; }
+    } else {
+      current.push(trimmed);
+    }
+  }
+  if (current.length) lists.push(current);
+  return lists.length ? lists : [['(No sentences entered.)']];
+}
+
+// ─── Render stage cards ───────────────────────────────────────────────────────
+
+function renderStageCards() {
+  const container = document.getElementById('stages');
+  container.innerHTML = '';
+  for (const def of STAGE_DEFS) {
+    const card = document.createElement('div');
+    card.className = 'stage-card' + (def.defaultEnabled ? ' enabled' : '');
+    card.id = `card-${def.id}`;
+    card.innerHTML = `
+      <div class="stage-card-header" onclick="toggleCard('${def.id}')">
+        <input type="checkbox" id="chk-${def.id}" ${def.defaultEnabled ? 'checked' : ''}
+          onclick="event.stopPropagation(); toggleCard('${def.id}')">
+        <span class="stage-title">${def.label}</span>
+        <span class="stage-type">${def.typeLabel}</span>
+      </div>
+      <div class="stage-card-body">
+        ${def.html()}
+      </div>`;
+    container.appendChild(card);
+  }
+}
+
+function toggleCard(id) {
+  const card = document.getElementById(`card-${id}`);
+  const chkEl = document.getElementById(`chk-${id}`);
+  const isEnabled = card.classList.contains('enabled');
+  if (isEnabled) {
+    card.classList.remove('enabled');
+    chkEl.checked = false;
+  } else {
+    card.classList.add('enabled');
+    chkEl.checked = true;
+  }
+}
+
+// ─── Build ROUTINE ────────────────────────────────────────────────────────────
+
+function buildRoutine() {
+  const client = val('clientName');
+  const name = val('routineName') || 'Voice Training';
+  const description = val('routineDesc');
+
+  const stages = [];
+  let num = 1;
+  let needSentencesNull = false;
+  let needStartersNull = false;
+  const extraKeys = {};
+
+  for (const def of STAGE_DEFS) {
+    if (!chk(`chk-${def.id}`)) continue;
+    const stage = def.toStage(num++);
+
+    if (stage._sentencesNull) needSentencesNull = true;
+    if (stage._startersNull) needStartersNull = true;
+    if (stage._customKey) extraKeys[stage._customKey] = stage._customData;
+
+    delete stage._sentencesNull;
+    delete stage._startersNull;
+    delete stage._customKey;
+    delete stage._customData;
+
+    stages.push(stage);
+  }
+
+  if (!stages.length) throw new Error('No exercises selected. Tick at least one exercise.');
+
+  const routine = { name, client, description, stages };
+  if (needSentencesNull) routine.sentences = null;
+  if (needStartersNull) routine.starters = null;
+  for (const [k, v] of Object.entries(extraKeys)) routine[k] = v;
+
+  return routine;
+}
+
+function routineToCode(routine) {
+  return `const ROUTINE = ${JSON.stringify(routine, null, 2)};`;
+}
+
+// ─── Engine loading (same approach as generator.html) ────────────────────────
+
+let engineBefore = null;
+let engineAfter = null;
+let fallbackFile = null;
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => { fallbackFile = reader.result; };
+    reader.readAsText(file);
+  }
+});
+
+async function loadEngine() {
+  let html = fallbackFile;
+  if (!html) {
+    try {
+      const resp = await fetch('index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      html = await resp.text();
+    } catch (err) {
+      document.getElementById('fallbackUpload').style.display = 'block';
+      throw new Error(`Could not fetch index.html: ${err.message}. Upload it using the link above.`);
+    }
+  }
+  const startMarker = '<!-- __ROUTINE_START__ -->';
+  const endMarker   = '<!-- __ROUTINE_END__ -->';
+  const startIdx = html.indexOf(startMarker);
+  const endIdx   = html.indexOf(endMarker);
+  if (startIdx === -1 || endIdx === -1) {
+    throw new Error('Could not find routine markers in index.html.');
+  }
+  engineBefore = html.substring(0, startIdx);
+  engineAfter  = html.substring(endIdx + endMarker.length);
+}
+
+function assembleHtml(routineCode) {
+  return engineBefore +
+    '<!-- __ROUTINE_START__ -->\n<script>\n' + routineCode + '\n<\/script>\n<!-- __ROUTINE_END__ -->' +
+    engineAfter;
+}
+
+function downloadHtml(html, clientName) {
+  const slug = clientName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `voice-training-${slug || 'custom'}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─── Status / preview helpers ─────────────────────────────────────────────────
+
+const statusEl = document.getElementById('status');
+const previewEl = document.getElementById('preview');
+
+function showStatus(type, html) {
+  statusEl.className = type;
+  statusEl.innerHTML = html;
+  statusEl.style.display = 'block';
+}
+
+function showPreview(routine) {
+  document.getElementById('previewTitle').textContent = routine.name || 'Custom Routine';
+  document.getElementById('previewDesc').textContent = routine.description || '';
+  const list = document.getElementById('previewList');
+  list.innerHTML = '';
+  for (const s of routine.stages) {
+    const li = document.createElement('li');
+    li.innerHTML = `${s.name} <span>(${s.type})</span>`;
+    list.appendChild(li);
+  }
+  previewEl.style.display = 'block';
+}
+
+// ─── Generate ─────────────────────────────────────────────────────────────────
+
+document.getElementById('generateBtn').addEventListener('click', async () => {
+  previewEl.style.display = 'none';
+  showStatus('loading', '<span class="spinner"></span>Building routine…');
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+
+  try {
+    let routine;
+    try {
+      routine = buildRoutine();
+    } catch (err) {
+      return showStatus('error', err.message);
+    }
+
+    if (!engineBefore) {
+      showStatus('loading', '<span class="spinner"></span>Loading engine template…');
+      await loadEngine();
+    }
+
+    const routineCode = routineToCode(routine);
+    const html = assembleHtml(routineCode);
+    showPreview(routine);
+    showStatus('success', 'Routine built successfully. Downloading now…');
+    downloadHtml(html, val('clientName'));
+
+  } catch (err) {
+    showStatus('error', err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+renderStageCards();
+</script>
+</body>
+</html>
